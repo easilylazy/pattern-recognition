@@ -20,3 +20,10 @@
 
 ![分类演示](./linear/linear_regression.png)
 
+### [fisher](./linear/fisher.ipynb)
+
+1. 实现fisher算法求最佳投影面
+   1. 通过均值衡量类间差距度
+   2. 通过方差衡量类内相似度
+   3. 利用拉格朗日乘子，得到最佳投影面的公式
+

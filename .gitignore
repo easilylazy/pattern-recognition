@@ -4,3 +4,5 @@ perceptron/bla.pickle
 perceptron/per*
 linear/draft.ipynb
 .vscode/settings.json
+linear/__pycache__/*
+linear/utils.py
