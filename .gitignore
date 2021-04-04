@@ -6,3 +6,4 @@ linear/draft.ipynb
 .vscode/settings.json
 linear/__pycache__/*
 linear/utils.py
+gradient/pic
