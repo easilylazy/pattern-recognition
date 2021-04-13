@@ -27,3 +27,36 @@
    2. 通过方差衡量类内相似度
    3. 利用拉格朗日乘子，得到最佳投影面的公式
 
+## [multiClass](./multiClass)
+多分类器的实现
+- OvO
+- OvA
+- softmax
+### [iris](./multiClass/iris.ipynb)
+
+实现iris的OvO的分类
+
+## [SVM](./SVM)
+
+支持向量机的实现
+
+## [nerualNetwork](./neuralNetwork)
+
+神经网络的[单次迭代过程](./neuralNetwork/single-pipeline.ipynb)以及[完整的迭代](./neuralNetwork/neuralNetwork.ipynb)
+
+
+
+## [gradient](./gradient)
+
+对梯度下降法（GD）的分析
+
+![动态变换](./gradient/pic/skate.svg)
+
+
+# Others
+
+## [kalmanFilter](./kalmanFilter)
+
+卡尔曼滤波器的实现
+
+![卡尔曼滤波](./kalmanFilter/velocity.png)
