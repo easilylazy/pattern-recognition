@@ -31,10 +31,11 @@
 多分类器的实现
 - OvO
 - OvA
-- softmax
+- [softmax](./multiClass/softmax.ipynb)
 ### [iris](./multiClass/iris.ipynb)
 
-实现iris的OvO的分类
+实现iris的[OvO的分类](./multiClass/iris.ipynb)与[softmax版本](./multiClass/iris-softmax.ipynb)
+
 
 ## [SVM](./SVM)
 
