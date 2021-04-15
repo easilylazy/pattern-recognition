@@ -50,7 +50,8 @@
 ## [nerualNetwork](./neuralNetwork)
 
 神经网络的[单次迭代过程](./neuralNetwork/single-pipeline.ipynb)以及[完整的迭代](./neuralNetwork/neuralNetwork.ipynb)
-
+### pytorch
+利用pytorch实现对[三类数据的分类](./neuralNetwork/class3nn.ipynb)
 
 
 ## [gradient](./gradient)
