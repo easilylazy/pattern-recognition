@@ -39,7 +39,13 @@
 
 ## [SVM](./SVM)
 
-支持向量机的实现
+支持向量机的实现，对中国与日本的沿海城市的经纬度坐标向量，中国标签为+1, 日本为标签为-1进行训练.  用支撑向量机设计分类器，判断钓鱼岛的经纬度坐标向量属于哪一类。     
+致谢：叶紫璇同学提供经纬度数据集
+
+1. [HingLoss-GD](./SVM/island.ipynb)
+2. [QP-solver](./SVM/island-qp.ipynb)
+
+![result](SVM/result.png)
 
 ## [nerualNetwork](./neuralNetwork)
 
