@@ -1,13 +1,13 @@
-# pattern-recognition
+# [pattern-recognition](https://github.com/easilylazy/pattern-recognition) 
 
-## perceptron
+## [perceptron](./perceptron)
 
 实现感知器算法，并产生多维正态分布的数据
 
 ![动态变换](./perceptron/perceptron.gif)
 
 
-## linear
+## [linear](./linear)
 
 ### [linear regression](./linear/linear_regression.ipynb)
 
@@ -52,13 +52,14 @@
 神经网络的[单次迭代过程](./neuralNetwork/single-pipeline.ipynb)以及[完整的迭代](./neuralNetwork/neuralNetwork.ipynb)
 ### pytorch
 利用pytorch实现对[三类数据的分类](./neuralNetwork/class3nn.ipynb)
-
+以及对[iris数据集的分类](./neuralNetwork/iris.ipynb)
+![iris](./neuralNetwork/iris.png)
 
 ## [gradient](./gradient)
 
 对梯度下降法（GD）的分析
 
-![动态变换](./gradient/pic/skate.svg)
+![动态变换](./gradient/2d-non-convex.png)
 
 
 # Others
