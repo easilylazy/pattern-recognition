@@ -1,0 +1,5 @@
+*.zip
+data/
+__pycache__/
+slides/
+homework-12345/
