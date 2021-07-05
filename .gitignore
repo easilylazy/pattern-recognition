@@ -2,4 +2,9 @@
 data/
 __pycache__/
 slides/
-homework-12345/
+*copy
+.vscode/
+*.pdf
+*checkpoints/
+.DS_Store
+*.gz
