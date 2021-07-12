@@ -13,12 +13,19 @@ class EuclideanLossLayer():
 	      - logit: forward results from the last FCLayer, shape(batch_size, 10)
 	      - gt: the ground truth label, shape(batch_size, 10)
 	    """
-
+		
 		############################################################################
 	    # TODO: Put your code here
 		# Calculate the average accuracy and loss over the minibatch, and
 		# store in self.accu and self.loss respectively.
 		# Only return the self.loss, self.accu will be used in solver.py.
+		self.logit=logit
+		self.gt=gt
+		test_pred=np.argmax(logit,axis=1)
+		test_true=np.argmax(gt,axis=1)
+		err=(test_pred-test_true)
+		self.acc = err[err==0].size/logit.shape[0]
+		self.loss = np.sum(np.power(gt-logit,2))/logit.shape[0]
 
 
 	    ############################################################################
@@ -31,5 +38,5 @@ class EuclideanLossLayer():
 	    # TODO: Put your code here
 		# Calculate and return the gradient (have the same shape as logit)
 
-
+		return np.sum(self.gt-self.logit,axis=0).reshape((self.logit.shape[1],1))
 	    ############################################################################

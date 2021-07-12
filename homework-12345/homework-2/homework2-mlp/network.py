@@ -19,3 +19,4 @@ class Network():
 		# backward layer by layer
 		for i in reversed(range(self.numLayer)): # reversed
 			delta = self.layerList[i].backward(delta)
+		# print('----------SUCCESS------------')
