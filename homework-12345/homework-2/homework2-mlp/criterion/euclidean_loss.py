@@ -25,6 +25,7 @@ class EuclideanLossLayer():
 		test_true=np.argmax(gt,axis=1)
 		err=(test_pred-test_true)
 		self.acc = err[err==0].size/logit.shape[0]
+		# print('accuracy: {0:f}'.format(self.acc))
 		self.loss = np.sum(np.power(gt-logit,2))/logit.shape[0]
 
 
@@ -38,5 +39,5 @@ class EuclideanLossLayer():
 	    # TODO: Put your code here
 		# Calculate and return the gradient (have the same shape as logit)
 
-		return np.sum(self.gt-self.logit,axis=0).reshape((self.logit.shape[1],1))
+		return self.gt-self.logit
 	    ############################################################################

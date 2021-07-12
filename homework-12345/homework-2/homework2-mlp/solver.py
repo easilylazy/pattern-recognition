@@ -68,6 +68,7 @@ def train_one_epoch(model, criterion, optimizer, data_get_next, max_epoch, batch
 
 		# Backward pass
 		delta = criterion.backward()
+		# print(delta)
 		model.backward(delta)
 
 		# Update weights, see optimize.py

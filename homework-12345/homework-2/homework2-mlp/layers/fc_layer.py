@@ -52,13 +52,16 @@ class FCLayer():
 		elif 'sigmoid' == self.actFunction:
 			hx=sigmoid(self.Input)
 			hx_deriv=sigmoid_deriv(self.Input)
+		for i in range(self.batch_size):
+			self.grad_W+=np.dot(hx[i].reshape(self.num_input,1),delta[i].reshape(1,self.num_output))
+		self.grad_W/=self.batch_size
+		self.grad_b=np.sum(delta,axis=0).reshape(self.grad_b.shape)/self.batch_size
+		local_delta=np.zeros((self.batch_size,self.num_input))
+		# for i in range(self.num_input):
+		for i in range(self.batch_size):
 
-		self.grad_W=np.dot(delta,np.sum(hx,axis=0).reshape(1,self.num_input)).transpose()/self.batch_size
-		self.grad_b=delta.reshape(self.grad_b.shape)
-
-		local_delta=np.zeros((self.num_input,1))
-		for i in range(self.num_input):
-			local_delta[i]=(np.dot(delta.transpose(),self.W.transpose()[:,i]))*np.sum(hx_deriv[:,i])
+			local_delta[i]=np.multiply(np.dot(delta[i].reshape(1,self.num_output),self.W.transpose()),hx_deriv[i])
+			# local_delta[i]=(np.dot(delta.transpose(),self.W.transpose()[:,i]))*np.sum(hx_deriv[:,i])
 
 		return local_delta
 	    ############################################################################

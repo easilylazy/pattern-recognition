@@ -29,5 +29,5 @@ class SigmoidLayer():
 	    # TODO: Put your code here
 		# Calculate the gradient using the later layer's gradient: delta
 
-		return (np.sum(delta)*sigmoid_deriv(self.Input).sum(axis=0)/self.Input.shape[0]).reshape((self.Input.shape[1],1))
+		return np.multiply(delta,sigmoid_deriv(self.Input))
 	    ############################################################################
