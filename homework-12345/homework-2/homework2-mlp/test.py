@@ -29,7 +29,7 @@ x_test = tf.data.Dataset.from_tensor_slices(x_test).map(decode_image)
 y_test = tf.data.Dataset.from_tensor_slices(y_test).map(decode_label)
 data_test = tf.data.Dataset.zip((x_test, y_test))
 batch_size = 100
-max_epoch = 20
+max_epoch = 10
 init_std = 0.01
 
 learning_rate_SGD = 0.001
@@ -54,3 +54,6 @@ sigmoidMLP.add(SigmoidLayer())
 sigmoidMLP.add(FCLayer(128, 10))
 
 sigmoidMLP, sigmoid_loss, sigmoid_acc = train(sigmoidMLP, criterion, sgd, data_train, max_epoch, batch_size, disp_freq)
+test(sigmoidMLP, criterion, data_test, batch_size, disp_freq)
+plot_loss_and_acc({'Sigmoid': [sigmoid_loss, sigmoid_acc],
+                   })
