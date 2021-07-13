@@ -4,6 +4,7 @@ import numpy as np
 
 # if you implement ConvLayer by convolve function, you will use the following code.
 from scipy.signal import fftconvolve as convolve
+from scipy import signal 
 
 class ConvLayer():
 	"""
@@ -51,8 +52,27 @@ class ConvLayer():
 	    # TODO: Put your code here
 		# Apply convolution operation to Input, and return results.
 		# Tips: you can use np.pad() to deal with padding.
-		self.Input = Input
-		input_after_pad = np.pad(Input, ((0,), (0,), (self.pad,), (self.pad,)), mode='constant', constant_values=0)
+		try:
+			self.Input = Input
+			input_after_pad = np.pad(Input, ((0,), (0,), (self.pad,), (self.pad,)), mode='constant', constant_values=0)
+			self.batch_size,self.channels,self.height,self.width=Input.shape
+
+			input_after_trans=input_after_pad.transpose(1,2,3,0)#  channels, height, width, batch_size
+			output=np.zeros((self.filters,self.height,self.width,self.batch_size))
+			# compute for each filter
+
+			# import pdb 
+			# pdb.set_trace()
+
+			for i in range(self.filters):
+				output[i]=signal.convolve(input_after_trans,np.flip(self.W[i][:,:,:,None],(0,1,2)),mode='valid')
+
+			return output.transpose(3,0,1,2)
+		except:
+			import pdb 
+			pdb.set_trace()
+
+
 
 
 	    ############################################################################
@@ -69,6 +89,6 @@ class ConvLayer():
 		############################################################################
 	    # TODO: Put your code here
 		# Calculate self.grad_W, self.grad_b, and return the new delta.
-
+		pass
 
 	    ############################################################################
