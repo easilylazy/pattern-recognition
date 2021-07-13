@@ -19,7 +19,7 @@ print('Test dataset size: ', test_size)
 
 batch_size = 100
 max_epoch = 10
-learning_rate = 0.01
+learning_rate = 0.0001
 
 # For regularization
 lamda = 0.5
@@ -45,7 +45,7 @@ for epoch in range(0, max_epoch):
         
         # Calculate accuracy
         label = np.argmax(label, axis=1) # scalar representation
-        accuracy = sum(prediction.reshape(100) == label) / float(len(label))
+        accuracy = sum(prediction.reshape(batch_size) == label) / float(len(label))
         
         loss_set.append(loss)
         accu_set.append(accuracy)
