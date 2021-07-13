@@ -38,9 +38,12 @@ weight_decay = 0.1
 disp_freq = 50
 
 from criterion import EuclideanLossLayer
+from criterion import SoftmaxCrossEntropyLossLayer
+
+criterion = SoftmaxCrossEntropyLossLayer()
 from optimizer import SGD
 
-criterion = EuclideanLossLayer()
+# criterion = EuclideanLossLayer()
 
 sgd = SGD(learning_rate_SGD, weight_decay)
 
