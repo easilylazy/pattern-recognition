@@ -27,7 +27,7 @@ class FCLayer():
 		self.grad_b = np.zeros((1, num_output))
 
 
-	def forward(self, Input):
+	def forward(self, Input, **kwargs):
 
 		############################################################################
 	    # TODO: Put your code here

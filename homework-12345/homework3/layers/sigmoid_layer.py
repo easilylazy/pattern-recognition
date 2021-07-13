@@ -14,7 +14,7 @@ class SigmoidLayer():
 		"""
 		self.trainable = False
 
-	def forward(self, Input):
+	def forward(self, Input, **kwargs):
 
 		############################################################################
 	    # TODO: Put your code here

@@ -17,7 +17,7 @@ class ReLULayer():
 		"""
 		self.trainable = False # no parameters
 
-	def forward(self, Input):
+	def forward(self, Input, **kwargs):
 
 		############################################################################
 	    # TODO: Put your code here
