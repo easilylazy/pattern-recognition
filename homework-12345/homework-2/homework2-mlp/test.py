@@ -29,7 +29,7 @@ x_test = tf.data.Dataset.from_tensor_slices(x_test).map(decode_image)
 y_test = tf.data.Dataset.from_tensor_slices(y_test).map(decode_label)
 data_test = tf.data.Dataset.zip((x_test, y_test))
 batch_size = 100
-max_epoch = 10
+max_epoch = 20
 init_std = 0.01
 
 learning_rate_SGD = 0.001
@@ -46,14 +46,28 @@ sgd = SGD(learning_rate_SGD, weight_decay)
 
 from layers import FCLayer, SigmoidLayer
 
-sigmoidMLP = Network()
-# Build MLP with FCLayer and SigmoidLayer
-# 128 is the number of hidden units, you can change by your own
-sigmoidMLP.add(FCLayer(784, 128))
-sigmoidMLP.add(SigmoidLayer())
-sigmoidMLP.add(FCLayer(128, 10))
+# sigmoidMLP = Network()
+# # Build MLP with FCLayer and SigmoidLayer
+# # 128 is the number of hidden units, you can change by your own
+# sigmoidMLP.add(FCLayer(784, 128))
+# sigmoidMLP.add(SigmoidLayer())
+# sigmoidMLP.add(FCLayer(128, 10))
 
-sigmoidMLP, sigmoid_loss, sigmoid_acc = train(sigmoidMLP, criterion, sgd, data_train, max_epoch, batch_size, disp_freq)
-test(sigmoidMLP, criterion, data_test, batch_size, disp_freq)
-plot_loss_and_acc({'Sigmoid': [sigmoid_loss, sigmoid_acc],
-                   })
+# sigmoidMLP, sigmoid_loss, sigmoid_acc = train(sigmoidMLP, criterion, sgd, data_train, max_epoch, batch_size, disp_freq)
+# test(sigmoidMLP, criterion, data_test, batch_size, disp_freq)
+# plot_loss_and_acc({'Sigmoid': [sigmoid_loss, sigmoid_acc],
+#                    })
+
+from layers import ReLULayer
+
+reluMLP = Network()
+# TODO build ReLUMLP with FCLayer and ReLULayer
+reluMLP.add(FCLayer(784, 128))
+reluMLP.add(ReLULayer())
+reluMLP.add(FCLayer(128, 10))
+
+reluMLP, relu_loss, relu_acc = train(reluMLP, criterion, sgd, data_train, max_epoch, batch_size, disp_freq)
+
+test(reluMLP, criterion, data_test, batch_size, disp_freq)
+
+plot_loss_and_acc({                   'relu': [relu_loss, relu_acc]})
