@@ -96,9 +96,9 @@ class ConvLayer():
 			for i in range(self.filters):
 				self.grad_W[i]+=(signal.convolve(self.input_after_pad[k].transpose(1,2,0),np.flip(delta[k,i][:,:,None],(0,1,2)),mode='valid')).transpose(2,0,1)#.sum(axis=0)/self.batch_size
 		self.grad_W[i]/=self.batch_size
-		print(" success compute grad_w")
+		# print(" success compute grad_w")
 		self.grad_b=delta.sum(axis=(0,2,3))/self.batch_size
-		print(" success compute grad_b")
+		# print(" success compute grad_b")
 
 		local_delta=np.zeros(self.Input.shape)#self.batch_size, self.filters, self.height, self.width)
 		local_delta_re=local_delta.transpose(1,2,3,0)# self.filters, self.height, self.width, self.batch_size,self.batch_size
@@ -108,7 +108,7 @@ class ConvLayer():
 			#signal.convolve(self.W.transpose(1,0,2,3)[k][:,:,:,None],np.flip(delta.transpose(1,2,3,0),axis=(0)),mode='same')[pad]#:-pad]
 			
 		local_delta=local_delta_re.transpose(3,0,1,2)
-		print(" success compute delta")
+		# print(" success compute delta")
 
 		return local_delta
 	    ############################################################################
