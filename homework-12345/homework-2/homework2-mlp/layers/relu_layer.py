@@ -22,18 +22,17 @@ class ReLULayer():
 		############################################################################
 	    # TODO: Put your code here
 		# Apply ReLU activation function to Input, and return results.
-		y=np.copy(Input)
-		y[Input<0]=0
-		return y
+		self.Input=Input
+		return Relu(Input)
 	    ############################################################################
 
 
 	def backward(self, delta):
-		pass
+		
 
 		############################################################################
 	    # TODO: Put your code here
 		# Calculate the gradient using the later layer's gradient: delta
 
-
+		return np.multiply(delta,Relu_deriv(self.Input))
 	    ############################################################################

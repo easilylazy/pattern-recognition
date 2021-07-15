@@ -27,11 +27,10 @@ class SoftmaxCrossEntropyLossLayer():
 		self.logit=logit
 		self.gt=gt
 		test_pred=np.argmax(logit,axis=1)
-		test_true=np.argmax(gt.labels,axis=1)
+		test_true=np.argmax(gt,axis=1)
 		err=(test_pred-test_true)
-		self.accu = err[err==0].size/logit.shape[0]
+		self.acc = err[err==0].size/logit.shape[0]
 		self.loss = -np.sum(np.multiply(gt,np.log(sigmoid(logit))))/logit.shape[0]
-		print('PRECISION: {0:f}'.format(self.accu))
 
 	    ############################################################################
 
@@ -43,6 +42,6 @@ class SoftmaxCrossEntropyLossLayer():
 		############################################################################
 	    # TODO: Put your code here
 		# Calculate and return the gradient (have the same shape as logit)
-		return np.sum(1-np.multiply(self.gt,(sigmoid(self.logit))),axis=0)
+		return np.multiply(self.gt,(sigmoid(self.logit)-1))
 
 	    ############################################################################
