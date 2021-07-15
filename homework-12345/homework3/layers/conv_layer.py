@@ -91,19 +91,24 @@ class ConvLayer():
 		############################################################################
 	    # TODO: Put your code here
 		# Calculate self.grad_W, self.grad_b, and return the new delta.
-		# try:
-		import pdb 
-		# pdb.set_trace()
 
 		for k in range(self.batch_size):
 			for i in range(self.filters):
-				# self.grad_W[i]+=(signal.convolve(self.input_after_trans[:,:,:,j],np.flip(delta[j,i][:,:,None],(0,1,2)),mode='valid')).transform(3,0,1,2)#.sum(axis=0)/self.batch_size
 				self.grad_W[i]+=(signal.convolve(self.input_after_pad[k].transpose(1,2,0),np.flip(delta[k,i][:,:,None],(0,1,2)),mode='valid')).transpose(2,0,1)#.sum(axis=0)/self.batch_size
 		self.grad_W[i]/=self.batch_size
 		print(" success compute grad_w")
 		self.grad_b=delta.sum(axis=(0,2,3))/self.batch_size
 		print(" success compute grad_b")
-		# except:
-		# 	import pdb 
-		# 	pdb.set_trace()
+
+		local_delta=np.zeros(self.Input.shape)#self.batch_size, self.filters, self.height, self.width)
+		local_delta_re=local_delta.transpose(1,2,3,0)# self.filters, self.height, self.width, self.batch_size,self.batch_size
+		pad=(self.W.shape[0]-1)//2
+		for k in range(self.inputs):
+			local_delta_re[k]=signal.convolve(np.flip(delta.transpose(1,2,3,0),axis=(0)),self.W.transpose(1,0,2,3)[k][:,:,:,None],mode='same')[pad]
+			#signal.convolve(self.W.transpose(1,0,2,3)[k][:,:,:,None],np.flip(delta.transpose(1,2,3,0),axis=(0)),mode='same')[pad]#:-pad]
+			
+		local_delta=local_delta_re.transpose(3,0,1,2)
+		print(" success compute delta")
+
+		return local_delta
 	    ############################################################################
