@@ -54,16 +54,18 @@ class ConvLayer():
 		# Tips: you can use np.pad() to deal with padding.
 		try:
 			self.Input = Input
+			
 			input_after_pad = np.pad(Input, ((0,), (0,), (self.pad,), (self.pad,)), mode='constant', constant_values=0)
 			self.batch_size,self.channels,self.height,self.width=Input.shape
 
 			input_after_trans=input_after_pad.transpose(1,2,3,0)#  channels, height, width, batch_size
+			self.input_after_pad=input_after_pad
+			self.input_after_trans=input_after_trans
 			output=np.zeros((self.filters,self.height,self.width,self.batch_size))
 			# compute for each filter
 
 			# import pdb 
 			# pdb.set_trace()
-
 			for i in range(self.filters):
 				output[i]=signal.convolve(input_after_trans,np.flip(self.W[i][:,:,:,None],(0,1,2)),mode='valid')
 
@@ -89,6 +91,19 @@ class ConvLayer():
 		############################################################################
 	    # TODO: Put your code here
 		# Calculate self.grad_W, self.grad_b, and return the new delta.
-		pass
+		# try:
+		import pdb 
+		# pdb.set_trace()
 
+		for k in range(self.batch_size):
+			for i in range(self.filters):
+				# self.grad_W[i]+=(signal.convolve(self.input_after_trans[:,:,:,j],np.flip(delta[j,i][:,:,None],(0,1,2)),mode='valid')).transform(3,0,1,2)#.sum(axis=0)/self.batch_size
+				self.grad_W[i]+=(signal.convolve(self.input_after_pad[k].transpose(1,2,0),np.flip(delta[k,i][:,:,None],(0,1,2)),mode='valid')).transpose(2,0,1)#.sum(axis=0)/self.batch_size
+		self.grad_W[i]/=self.batch_size
+		print(" success compute grad_w")
+		self.grad_b=delta.sum(axis=(0,2,3))/self.batch_size
+		print(" success compute grad_b")
+		# except:
+		# 	import pdb 
+		# 	pdb.set_trace()
 	    ############################################################################
