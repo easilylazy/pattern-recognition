@@ -64,14 +64,21 @@ def train_one_epoch(model, criterion, optimizer, data_get_next, max_epoch, batch
 
 		# Forward pass
 		logit = model.forward(train_x)
+		print('forward success')
 		criterion.forward(logit, train_y)
+		print('cri forward success')
+
 
 		# Backward pass
 		delta = criterion.backward()
 		model.backward(delta)
+		print('backward success')
+
 
 		# Update weights, see optimize.py
 		optimizer.step(model)
+		print('cri backward success')
+
 
 		# Record loss and accuracy
 		batch_train_loss.append(criterion.loss)
