@@ -120,6 +120,11 @@ class DataSet(object):
   @property
   def epochs_completed(self):
     return self._epochs_completed
+  def __getitem__(self, index):
+        return self._images[index], self._labels[index]
+
+  def __len__(self):
+        return len(self._images)
   def next_batch(self, batch_size, fake_data=False):
     """Return the next `batch_size` examples from this data set."""
     if fake_data:
