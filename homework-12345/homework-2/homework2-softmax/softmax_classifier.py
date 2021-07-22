@@ -37,10 +37,11 @@ def softmax_classifier(W, input, label, lamda):
       k=np.where(sublabel==1)
       theta_x=np.dot(W.transpose(),subinput)
       exps=np.exp(theta_x)
-      h=exps[k]/np.sum(exps)
-      loss+=np.log(h)
+      h=exps/np.sum(exps)
+      loss+=np.log(h[k])
       grad+=(h-sublabel).reshape(C,1)*subinput.reshape(1,D)
       if(np.where(exps==exps.max())[0].shape[0]!=1):
+        print(str(i)+' error')
         gradient=grad.transpose()/N
         loss/=(-N)
         return loss, gradient, prediction
