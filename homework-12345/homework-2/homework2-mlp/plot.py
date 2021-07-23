@@ -2,8 +2,11 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
-def plot_loss_and_acc(loss_and_acc_dict):
+def plot_loss_and_acc(loss_and_acc_dict,save=True,show=True,path='res/',title='lr_0.01'):
+	if os.path.exists(path) is False:
+		os.mkdir(path)
 	fig = plt.figure()
 	tmp = list(loss_and_acc_dict.values())
 	maxEpoch = len(tmp[0][0])
@@ -20,8 +23,11 @@ def plot_loss_and_acc(loss_and_acc_dict):
 	plt.legend()
 	plt.xticks(range(0, maxEpoch + 1, 2))
 	plt.axis([0, maxEpoch, minLoss, maxLoss])
-	plt.show()
 
+	if save:
+		plt.savefig(path+'loss_'+title+'.png')
+	if show:
+		plt.show()
 
 	maxAcc = min(1, max([max(x[1]) for x in loss_and_acc_dict.values()]) + 0.1)
 	minAcc = max(0, min([min(x[1]) for x in loss_and_acc_dict.values()]) - 0.1)
@@ -36,11 +42,13 @@ def plot_loss_and_acc(loss_and_acc_dict):
 	plt.xticks(range(0, maxEpoch + 1, 2))
 	plt.axis([0, maxEpoch, minAcc, maxAcc])
 	plt.legend()
-	plt.show()
-
+	if save:
+		plt.savefig(path+'acc_'+title+'.png')
+	if show:
+		plt.show()
 
 
 if __name__ == '__main__':
 	loss = [x for x in range(10, 0, -1)]
 	acc = [x / 10. for x in range(0, 10)]
-	plotLossAndAcc({'as': [loss, acc]})
+	plot_loss_and_acc({'as': [loss, acc]})
