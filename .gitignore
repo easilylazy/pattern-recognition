@@ -24,3 +24,4 @@ homework-12345/homework-2/homework2-mlp/res.txt
 res/
 venv/
 *.pth
+.data/

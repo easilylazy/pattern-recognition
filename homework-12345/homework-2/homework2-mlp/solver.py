@@ -124,3 +124,4 @@ def test(model, criterion, dataset, batch_size, disp_freq):
 			batch_test_acc.append(criterion.acc)
 
 	print("The test accuracy is {:.4f}.\n".format(np.mean(batch_test_acc)))
+	return np.mean(batch_test_acc)

@@ -1,7 +1,7 @@
-from torchtext import data
-from torchtext import datasets
-from torchtext.vocab import Vectors, GloVe, CharNGram, FastText
-
+import torch
+from torchtext.legacy import data
+from torchtext.legacy import datasets
+from torchtext.vocab import Vectors, GloVe, CharNGram#, FastTex
 
 ################################
 # DataLoader
