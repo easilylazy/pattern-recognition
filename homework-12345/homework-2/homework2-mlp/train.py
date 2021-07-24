@@ -75,7 +75,7 @@ data_test = tf.data.Dataset.zip((x_test, y_test))
 
 # %%
 batch_size = 100
-max_epoch = 0
+max_epoch = 20
 init_std = 0.01
 
 learning_rate_SGD = 0.001
@@ -84,6 +84,17 @@ weight_decay = 0.1
 disp_freq = 50
 
 test_choice = False
+
+info_str= (
+    "_lr_"
+    + str(learning_rate_SGD)
+    + "_de_"
+    + str(weight_decay)
+    + "_epo_"
+    + str(max_epoch)
+    + "_bat_"
+    + str(batch_size)
+)
 
 # %% [markdown]
 # ## 1. MLP with Euclidean Loss
@@ -127,11 +138,12 @@ cost_time=datetime.now() - start
 
 print('sigmoid euclidean time: '+str(cost_time.microseconds))
 
-
+title='eu_sig_'+str(cost_time.microseconds)
 
 # %%
 if test_choice:
-    test(sigmoidMLP, criterion, data_test, batch_size, disp_freq)
+    acc=test(sigmoidMLP, criterion, data_test, batch_size, disp_freq)
+    title+='_acc_'+str(acc)
 
 # %% [markdown]
 # ## 1.2 MLP with Euclidean Loss and ReLU Activation Function
@@ -158,19 +170,22 @@ reluMLP, relu_loss, relu_acc = train(reluMLP, criterion, sgd, data_train, max_ep
 cost_time=datetime.now() - start
 
 print('Relu euclidean time: '+str(cost_time.microseconds))
-
+title+='_re_'+str(cost_time.microseconds)
 
 
 # %%
 if test_choice:
-    test(reluMLP, criterion, data_test, batch_size, disp_freq)
+    acc=test(reluMLP, criterion, data_test, batch_size, disp_freq)
+    title+='_acc_'+str(acc)
 
 # %% [markdown]
 # ## Plot
 
+
 # %%
+
 plot_loss_and_acc({'Sigmoid': [sigmoid_loss, sigmoid_acc],
-                   'relu': [relu_loss, relu_acc]})
+                   'relu': [relu_loss, relu_acc]},show=False,title=info_str+title)
 
 # %% [markdown]
 # ## 2. MLP with Softmax Cross-Entropy Loss
@@ -210,15 +225,14 @@ cost_time=datetime.now() - start
 
 print('sigmoid softmax time: '+str(cost_time.microseconds))
 
-
+title='so_sig_'+str(cost_time.microseconds)
 # %% [markdown]
 # ### Test
 
 # %%
 if test_choice:
-
-    test(sigmoidMLP, criterion, data_test, batch_size, disp_freq)
-
+    acc=test(sigmoidMLP, criterion, data_test, batch_size, disp_freq)
+    title+='_acc_'+str(acc)
 # %% [markdown]
 # ## 2.2 MLP with Softmax Cross-Entropy Loss and ReLU Activation Function
 # Build and train a MLP contraining one hidden layer with 128 units using ReLU activation function and Softmax cross-entropy loss function.
@@ -241,24 +255,15 @@ cost_time=datetime.now() - start
 
 print('Relu softmax time: '+str(cost_time.microseconds))
 
+title+='_re_'+str(cost_time.microseconds)
 
 # %%
 if test_choice:
-
-    test(reluMLP, criterion, data_test, batch_size, disp_freq)
-
+    acc=test(reluMLP, criterion, data_test, batch_size, disp_freq)
+    title+='_acc_'+str(acc)
 # %% [markdown]
 # ## Plot
 
 # %%
 plot_loss_and_acc({'Sigmoid': [sigmoid_loss, sigmoid_acc],
-                   'relu': [relu_loss, relu_acc]})
-
-# %% [markdown]
-# ### ~~You have finished homework2-mlp, congratulations!~~  
-# 
-# **Next, according to the requirements 4) of report:**
-# ### **You need to construct a two-hidden-layer MLP, using any activation function and loss function.**
-# 
-# **Note: Please insert some new cells blow (using '+' bottom in the toolbar) refer to above codes. Do not modify the former code directly.**
-
+                   'relu': [relu_loss, relu_acc]},show=False,title=info_str+title)
