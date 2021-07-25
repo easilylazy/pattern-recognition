@@ -2,11 +2,14 @@
 
 from warnings import resetwarnings
 import numpy as np
-from layers.sigmoid_layer import sigmoid
 # a small number to prevent dividing by zero, maybe useful for you
 EPS = 1e-11
- 
-
+def softmax(input):
+	batch_size=input.shape[0]
+	class_num=input.shape[1]
+	sum_data=np.sum(input,axis=1)
+	sum_data_exp=sum_data.reshape(batch_size,1)*np.ones((1,class_num))
+	return input/sum_data_exp
 
 class SoftmaxCrossEntropyLossLayer():
 	def __init__(self):
@@ -27,7 +30,7 @@ class SoftmaxCrossEntropyLossLayer():
 		# Only return the self.loss, self.accu will be used in solver.py.
 		self.logit=logit
 		self.gt=gt
-		self.res=sigmoid(logit)
+		self.res=softmax(logit)
 		test_pred=np.argmax(logit,axis=1)
 		test_true=np.argmax(gt,axis=1)
 		err=(test_pred-test_true)
@@ -44,6 +47,6 @@ class SoftmaxCrossEntropyLossLayer():
 		############################################################################
 	    # TODO: Put your code here
 		# Calculate and return the gradient (have the same shape as logit)
-		return self.logit-self.gt#np.multiply(self.gt,(self.res-1))
+		return self.res-self.gt#np.multiply(self.gt,(self.res-1))
 
 	    ############################################################################
