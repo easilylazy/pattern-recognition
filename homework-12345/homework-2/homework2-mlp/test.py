@@ -39,7 +39,8 @@ disp_freq = 50
 
 from criterion import EuclideanLossLayer
 from criterion import SoftmaxCrossEntropyLossLayer
-
+# from tf.losses import softmax_cross_entropy
+# criterion = tf.losses.softmax_cross_entropy()
 criterion = SoftmaxCrossEntropyLossLayer()
 from optimizer import SGD
 
@@ -66,11 +67,11 @@ from layers import ReLULayer
 reluMLP = Network()
 # TODO build ReLUMLP with FCLayer and ReLULayer
 reluMLP.add(FCLayer(784, 128))
-reluMLP.add(ReLULayer())
+# reluMLP.add(ReLULayer())
 reluMLP.add(FCLayer(128, 10))
 
 reluMLP, relu_loss, relu_acc = train(reluMLP, criterion, sgd, data_train, max_epoch, batch_size, disp_freq)
 
 test(reluMLP, criterion, data_test, batch_size, disp_freq)
 
-plot_loss_and_acc({                   'relu': [relu_loss, relu_acc]})
+plot_loss_and_acc({                   'relu': [relu_loss, relu_acc]},title='test_sys_soft')
