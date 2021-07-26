@@ -27,7 +27,7 @@ from solver import train, test
 from plot import plot_loss_and_acc
 # %%
 from datetime import datetime
-
+import sys, getopt
 start=datetime.now()
 
 a=3
@@ -83,8 +83,31 @@ weight_decay = 0.1
 
 disp_freq = 50
 
-test_choice = False
-
+test_choice = True
+try:
+    argv=(sys.argv[1:])
+    opts, args = getopt.getopt(argv,"hb:m:i:l:w:d:t:",["ifile=","ofile="])
+except getopt.GetoptError:
+    print ('test.py -b <batch_size> -m <max epoch> -i <init_std> -l <learning rate> -w <weight decay> -t <whether test>')
+    sys.exit(2)
+print(opts)
+for opt, arg in opts:
+    if opt == '-h':
+        print ('test.py -b <batch_size> -m <max epoch> -i <init_std> -l <learning rate> -w <weight decay> -t <whether test>')
+        sys.exit()
+    elif opt == '-b':
+        batch_size=eval(arg)
+    elif opt == '-m':
+        max_epoch=eval(arg)
+    elif opt == '-i':
+        init_std=eval(arg)
+    elif opt == '-l':
+        learning_rate_SGD=eval(arg)
+    elif opt == '-w':
+        weight_decay=eval(arg)
+    elif opt == '-t':
+        if arg == 'False':
+            test_choice=False
 info_str= (
     "_lr_"
     + str(learning_rate_SGD)
@@ -95,7 +118,7 @@ info_str= (
     + "_bat_"
     + str(batch_size)
 )
-
+print(info_str)
 # %% [markdown]
 # ## 1. MLP with Euclidean Loss
 # In part-1, you need to train a MLP with **Euclidean Loss**.  
