@@ -111,9 +111,9 @@ for opt, arg in opts:
         if arg == 'False':
             test_choice=False
     elif opt == '-1':
-        hidden_layer1=eval(opt)
+        hidden_layer1=eval(arg)
     elif opt == '-2':
-        hidden_layer2=eval(opt)
+        hidden_layer2=eval(arg)
 info_str= (
     "_lr_"
     + str(learning_rate_SGD)
