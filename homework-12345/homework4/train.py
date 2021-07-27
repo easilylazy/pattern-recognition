@@ -126,10 +126,10 @@ for t in range(epochs):
     if SAVE_CKP:
         torch.save(model_load.state_dict(), filename)
         print("save in " + filename)
-
+_,accu=test_loop(test_dataloader, model_load, loss_fn)
 from plot import plot_loss_and_acc
 
-filename = "convnet2fc_lr_" + str(learning_rate)
+filename = "convnet2fc_lr_" + str(learning_rate)+'_acc_'+str(accu)
 plot_loss_and_acc({"ConvNet": [avg_test_loss, avg_test_acc]}, filename=filename)
 
 print("Done!")
