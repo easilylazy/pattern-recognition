@@ -6,7 +6,7 @@ import os
 
 def plot_loss_and_acc(loss_and_acc_dict,save=True,show=True,path='res/',title='lr_0.01'):
 	try:
-		title='up_'
+		title='up_'+title
 		if os.path.exists(path) is False:
 			os.mkdir(path)
 		fig = plt.figure()
