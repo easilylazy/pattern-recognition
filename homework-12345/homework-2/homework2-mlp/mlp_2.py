@@ -157,11 +157,11 @@ from layers import FCLayer, SigmoidLayer
 sigmoidMLP = Network()
 # Build MLP with FCLayer and SigmoidLayer
 # 128 is the number of hidden units, you can change by your own
-reluMLP.add(FCLayer(784, hidden_layer1))
-reluMLP.add(ReLULayer())
-reluMLP.add(FCLayer(hidden_layer1, hidden_layer2))
-reluMLP.add(ReLULayer())
-reluMLP.add(FCLayer(hidden_layer2, 10))
+sigmoidMLP.add(FCLayer(784, hidden_layer1))
+sigmoidMLP.add(SigmoidLayer())
+sigmoidMLP.add(FCLayer(hidden_layer1, hidden_layer2))
+sigmoidMLP.add(SigmoidLayer())
+sigmoidMLP.add(FCLayer(hidden_layer2, 10))
 
 
 
