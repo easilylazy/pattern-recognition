@@ -51,7 +51,7 @@ class SoftmaxCrossEntropyLossLayer:
         ############################################################################
         # TODO: Put your code here
         # Calculate and return the gradient (have the same shape as logit)
-        return self.res - self.gt  # np.multiply(self.gt,(self.res-1))
+        return self.res - self.gt  
 
         ############################################################################
 
