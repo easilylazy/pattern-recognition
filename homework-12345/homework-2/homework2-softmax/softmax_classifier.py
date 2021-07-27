@@ -1,6 +1,7 @@
 import numpy as np
 from numpy.lib.function_base import gradient
 
+
 def softmax_classifier(W, input, label, lamda):
     """
       Softmax Classifier
@@ -25,32 +26,31 @@ def softmax_classifier(W, input, label, lamda):
     # TODO: Put your code here
 
     ############################################################################
-    N=int(input.shape[0])
-    D=int(input.shape[1])
-    C=int(label.shape[1])
-    loss=0
-    grad=np.zeros([C,D])
-    prediction=np.zeros([N,1])
+    N = int(input.shape[0])
+    D = int(input.shape[1])
+    C = int(label.shape[1])
+    loss = 0
+    grad = np.zeros([C, D])
+    prediction = np.zeros([N, 1])
     for i in range(N):
-      sublabel=label[i]
-      subinput=input[i]
-      k=np.where(sublabel==1)
-      theta_x=np.dot(W.transpose(),subinput)
-      exps=np.exp(theta_x)
-      h=exps/np.sum(exps)
-      loss+=np.log(h[k])
-      grad+=(h-sublabel).reshape(C,1)*subinput.reshape(1,D)
-      if(np.where(exps==exps.max())[0].shape[0]!=1):
-        print(str(i)+' error')
-        gradient=grad.transpose()/N
-        loss/=(-N)
-        return loss, gradient, prediction
-      else:
-        prediction[i]=np.where(exps==exps.max())[0]
+        sublabel = label[i]
+        subinput = input[i]
+        k = np.where(sublabel == 1)
+        theta_x = np.dot(W.transpose(), subinput)
+        exps = np.exp(theta_x)
+        h = exps / np.sum(exps)
+        loss += np.log(h[k])
+        grad += (h - sublabel).reshape(C, 1) * subinput.reshape(1, D)
+        if np.where(exps == exps.max())[0].shape[0] != 1:
+            gradient = grad.transpose() / N
+            loss /= -N
+            print(str(i) + " error")
+            return loss, gradient, prediction
+        else:
+            prediction[i] = np.where(exps == exps.max())[0]
 
-    loss/=(-N)
-    loss+=lamda*np.sum(W*W)/2
-    gradient=grad.transpose()/N+lamda*W
-
+    loss /= -N
+    loss += lamda * np.sum(W * W) / 2
+    gradient = grad.transpose() / N + lamda * W
 
     return loss, gradient, prediction
