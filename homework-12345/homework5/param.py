@@ -20,6 +20,8 @@ for opt, arg in opts:
         hidden_size=eval(arg)
     elif opt == '-b':
         batch_size=eval(arg)
+    elif opt == '-d':
+        eval_time=eval(arg)
     elif opt == '-e':
         epoch=eval(arg)
     elif opt == '-m':
@@ -45,6 +47,8 @@ info_str= (
     + str(epoch)
     + "_bat_"
     + str(batch_size)
+    +'_eval_'
+    +str(eval_time)
 )
 print(info_str)
 

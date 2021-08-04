@@ -133,39 +133,38 @@ net.embedding_table.weight.data.copy_(pretrained_embeddings)
 print(net.embedding_table)
 optim = net.optim
 max_acc = 0.0 # 记录最大准确率的值
-ej = 0
 
-test_batch=total=(len(test)//batch_size)
-total_test=batch_size*(len(test)//batch_size)
+test_batch=(len(test)//batch_size)
+train_batch=(len(train)//batch_size)
+total_test=batch_size*test_batch
+total_train=batch_size*train_batch
 loss_list=[]
 acc_list=[]
+ej = 0
 for i in range(epoch):
-    # batch = next(iter(train_iter)) # for batch in train_iter
-    # batch_it = batch(train_, 'train')
     print('training (epoch:',i+1,')')
-    for i in range(batch_size):
-    # for sentence, tags in batch:
+    for j in range(train_batch):
         batch = next(iter(train_iter)) # for batch in train_iter
-
         x=batch.text.transpose(0,1).to(torch.float32)
         y=batch.label-1
-        ej += 1
         y_hat = net.forward(Variable(torch.Tensor(x)), len(x))
         # y = torch.max(torch.Tensor(y), 1)[1]
         loss = net.criterion(y_hat, y)
-        if (ej+1)%50 == 0:
-            print('epoch:', i+1, ' | batch' , ej ,' | loss = ', loss)
+        loss_val=loss.item()
+        loss_list.append(loss_val)
+        ej += 1
+        if (ej+1)%10 == 0:
+            print('epoch:', i+1,'/',epoch, ' | batch' , j*batch_size,'/',total_train ,' | loss = ', loss_val)
         net.optim.zero_grad()    
         loss.backward(retain_graph=True)
         net.optim.step()
-        loss_list.append(loss.item())
         
         if ej%eval_time == 0:    
             # 测试
             with torch.no_grad():
                 print('testing (epoch:',i+1,')')
                 num = 0
-                for i in range(test_batch):
+                for k in range(test_batch):
                     batch = next(iter(test_iter)) # for batch in train_iter
                     x=batch.text.transpose(0,1).to(torch.float32)
                     y=batch.label-1
