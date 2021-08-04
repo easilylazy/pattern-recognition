@@ -38,19 +38,40 @@ weight_decay = 0.1
 disp_freq = 50
 
 from criterion import EuclideanLossLayer
+from criterion import SoftmaxCrossEntropyLossLayer
+# from tf.losses import softmax_cross_entropy
+# criterion = tf.losses.softmax_cross_entropy()
+criterion = SoftmaxCrossEntropyLossLayer()
 from optimizer import SGD
 
-criterion = EuclideanLossLayer()
+# criterion = EuclideanLossLayer()
 
 sgd = SGD(learning_rate_SGD, weight_decay)
 
 from layers import FCLayer, SigmoidLayer
 
-sigmoidMLP = Network()
-# Build MLP with FCLayer and SigmoidLayer
-# 128 is the number of hidden units, you can change by your own
-sigmoidMLP.add(FCLayer(784, 128))
-sigmoidMLP.add(SigmoidLayer())
-sigmoidMLP.add(FCLayer(128, 10))
+# sigmoidMLP = Network()
+# # Build MLP with FCLayer and SigmoidLayer
+# # 128 is the number of hidden units, you can change by your own
+# sigmoidMLP.add(FCLayer(784, 128))
+# sigmoidMLP.add(SigmoidLayer())
+# sigmoidMLP.add(FCLayer(128, 10))
 
-sigmoidMLP, sigmoid_loss, sigmoid_acc = train(sigmoidMLP, criterion, sgd, data_train, max_epoch, batch_size, disp_freq)
+# sigmoidMLP, sigmoid_loss, sigmoid_acc = train(sigmoidMLP, criterion, sgd, data_train, max_epoch, batch_size, disp_freq)
+# test(sigmoidMLP, criterion, data_test, batch_size, disp_freq)
+# plot_loss_and_acc({'Sigmoid': [sigmoid_loss, sigmoid_acc],
+#                    })
+
+from layers import ReLULayer
+
+reluMLP = Network()
+# TODO build ReLUMLP with FCLayer and ReLULayer
+reluMLP.add(FCLayer(784, 128))
+# reluMLP.add(ReLULayer())
+reluMLP.add(FCLayer(128, 10))
+
+reluMLP, relu_loss, relu_acc = train(reluMLP, criterion, sgd, data_train, max_epoch, batch_size, disp_freq)
+
+test(reluMLP, criterion, data_test, batch_size, disp_freq)
+
+plot_loss_and_acc({                   'relu': [relu_loss, relu_acc]},title='test_sys_soft')

@@ -18,6 +18,9 @@ class SGD():
 				# Calculate diff_W and diff_b using layer.grad_W and layer.grad_b.
 				# Do not forget the weightDecay term.
 
+				layer.diff_W=-self.learningRate*(layer.grad_W+self.weightDecay*layer.W)
+				layer.diff_b=-self.learningRate*layer.grad_b
+
 
 			    ############################################################################
 
