@@ -12,6 +12,8 @@ from torchtext.vocab import Vectors, GloVe, CharNGram#, FastTex
 from torch.autograd import Variable
 
 import numpy as np
+from os import stat
+import sys, getopt
 
 torch.manual_seed(1)
 
@@ -72,13 +74,15 @@ print(pretrained_embeddings.shape)
 
 # %%
 # 超参数
-max_len = 65 #句子最大长度
-embedding_size = 300
-hidden_size = 100
-batch_size = 64
-epoch = 100
-label_num = 6
-eval_time = 15 # 每训练100个batch后对测试集或验证集进行测试
+# max_len = 65 #句子最大长度
+# embedding_size = 300
+# hidden_size = 100
+# batch_size = 64
+# epoch = 100
+# label_num = 6
+# eval_time = 15 # 每训练100个batch后对测试集或验证集进行测试
+from param import get_param
+info_str,max_len ,embedding_size ,hidden_size ,batch_size,epoch,label_num ,eval_time =get_param()
 
 
 # %%
@@ -130,6 +134,11 @@ print(net.embedding_table)
 optim = net.optim
 max_acc = 0.0 # 记录最大准确率的值
 ej = 0
+
+test_batch=total=(len(test)//batch_size)
+total_test=batch_size*(len(test)//batch_size)
+loss_list=[]
+acc_list=[]
 for i in range(epoch):
     # batch = next(iter(train_iter)) # for batch in train_iter
     # batch_it = batch(train_, 'train')
@@ -149,27 +158,22 @@ for i in range(epoch):
         net.optim.zero_grad()    
         loss.backward(retain_graph=True)
         net.optim.step()
+        loss_list.append(loss.item())
         
         if ej%eval_time == 0:    
             # 测试
             with torch.no_grad():
                 print('testing (epoch:',i+1,')')
-                # batch = next(iter(test_iter))
-                # batch_it = batch(test_, 'test')
                 num = 0
-                for i in range(20):
-                # for sentence, tags in batch:
+                for i in range(test_batch):
                     batch = next(iter(train_iter)) # for batch in train_iter
                     x=batch.text.transpose(0,1).to(torch.float32)
                     y=batch.label-1
-                # for x,y in batch_it:
                     y_hat = net.forward(Variable(torch.Tensor(x)), len(x))
                     y_hat = np.argmax(y_hat.numpy(),axis=1)
-                    # y = np.argmax(y,axis=1)
-                    for ek,k in enumerate(y_hat):
-                        if k == y[ek]:
-                            num += 1
-                acc = round(100*num/20/batch_size, 2)
+                    num+=len(np.where((y_hat-y.numpy())==0)[0])
+                acc = round(num/total_test, 4)
+                acc_list.append(acc)
                 if acc > max_acc:
                     max_acc = acc
                 print('epoch:', i+1, ' | accuracy = ', acc, ' | max_acc = ', max_acc)
@@ -177,5 +181,7 @@ for i in range(epoch):
 
 
 
+info_str+='_loss_'+str(round(loss.item(),4))+'_acc_'+str(max_acc)
+from plot import plot_loss_and_acc
 
-
+plot_loss_and_acc({'res': [loss_list, acc_list]},show=False,title=info_str)
