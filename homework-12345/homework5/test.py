@@ -151,7 +151,7 @@ for i in range(epoch):
         # y = torch.max(torch.Tensor(y), 1)[1]
         loss = net.criterion(y_hat, y)
         loss_val=loss.item()
-        loss_list.append(loss_val)
+        
         ej += 1
         if (ej+1)%10 == 0:
             print('epoch:', i+1,'/',epoch, ' | batch' , j*batch_size,'/',total_train ,' | loss = ', loss_val)
@@ -159,9 +159,9 @@ for i in range(epoch):
         loss.backward(retain_graph=True)
         net.optim.step()
         
-        if ej%eval_time == 0:    
+        # if ej%eval_time == 0:    
             # 测试
-            with torch.no_grad():
+    with torch.no_grad():
                 print('testing (epoch:',i+1,')')
                 num = 0
                 for k in range(test_batch):
@@ -171,12 +171,14 @@ for i in range(epoch):
                     y_hat = net.forward(Variable(torch.Tensor(x)), len(x))
                     y_hat = np.argmax(y_hat.numpy(),axis=1)
                     num+=len(np.where((y_hat-y.numpy())==0)[0])
+                print( num,total_test)
                 acc = round(num/total_test, 4)
                 acc_list.append(acc)
                 if acc > max_acc:
                     max_acc = acc
                 print('epoch:', i+1, ' | accuracy = ', acc, ' | max_acc = ', max_acc)
-
+    acc_list.append(acc)
+    loss_list.append(loss_val)
 
 
 
