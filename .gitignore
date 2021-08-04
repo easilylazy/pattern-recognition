@@ -25,3 +25,6 @@ res/
 venv/
 *.pth
 .data/
+ref/
+homework-12345/homework-2/homework2-mlp/test_soft.py
+homework-12345/homework-2/homework2-mlp/train.bat
