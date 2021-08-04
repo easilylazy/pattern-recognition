@@ -166,7 +166,7 @@ for i in range(epoch):
                 print('testing (epoch:',i+1,')')
                 num = 0
                 for i in range(test_batch):
-                    batch = next(iter(train_iter)) # for batch in train_iter
+                    batch = next(iter(test_iter)) # for batch in train_iter
                     x=batch.text.transpose(0,1).to(torch.float32)
                     y=batch.label-1
                     y_hat = net.forward(Variable(torch.Tensor(x)), len(x))
