@@ -83,7 +83,7 @@ print(pretrained_embeddings.shape)
 # label_num = 6
 # eval_time = 15 # 每训练100个batch后对测试集或验证集进行测试
 from param import get_param
-info_str,max_len ,embedding_size ,hidden_size ,batch_size,epoch,label_num ,eval_time,_ =get_param()
+info_str,max_len ,embedding_size ,hidden_size ,batch_size,epoch,label_num ,eval_time,_,_ =get_param()
 info_str='bidr_'+info_str
 num_layers=2
 bidirectional=True
