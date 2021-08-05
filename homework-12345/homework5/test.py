@@ -171,10 +171,11 @@ for i in range(epoch):
                 for k in range(test_batch):
                     batch = next(iter(test_iter)) # for batch in train_iter
                     x=batch.text.transpose(0,1).to(torch.float32)
+                    x=Variable(x).to(device)
                     y=batch.label-1
                     x=x.to(device)
                     y=y.to(device)
-                    y_hat = net.forward(Variable(torch.Tensor(x)), len(x))
+                    y_hat = net.forward(x, len(x))
                     y_hat = np.argmax(y_hat.numpy(),axis=1)
                     num+=len(np.where((y_hat-y.numpy())==0)[0])
                 print( num,total_test)
