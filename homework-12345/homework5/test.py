@@ -100,15 +100,15 @@ class Classify(nn.Module):
         self.lstm = nn.LSTM(input_size=self.embedding_size, hidden_size=self.hidden_size,num_layers=num_layers,dropout=0.8)#,bidirectional=True)
         self.init_w = Variable(torch.Tensor(1, self.hidden_size), requires_grad=True)
         torch.nn.init.uniform_(self.init_w)
-        self.init_w = nn.Parameter(self.init_w)
+        self.init_w = nn.Parameter(self.init_w).to(device)
         self.linear = nn.Linear(self.hidden_size, self.label_num)
         self.criterion  = nn.CrossEntropyLoss()
         self.optim = torch.optim.Adam(self.parameters(),lr=1e-3)
     
     def forward(self, input, batch_size):
         input = self.embedding_table(input.long()) # input:[batch_size, max_len, embedding_size]
-        h0 = Variable(torch.zeros(num_layers, batch_size, self.hidden_size))
-        c0 = Variable(torch.zeros(num_layers, batch_size, self.hidden_size))
+        h0 = Variable(torch.zeros(num_layers, batch_size, self.hidden_size)).to(device)
+        c0 = Variable(torch.zeros(num_layers, batch_size, self.hidden_size)).to(device)
         lstm_out, _ = self.lstm(input.permute(1,0,2),(h0,c0))
         lstm_out = torch.tanh(lstm_out) # [max_len, bach_size, hidden_size]
         M = torch.matmul(self.init_w, lstm_out.permute(1,2,0))
@@ -148,9 +148,10 @@ for i in range(epoch):
     print('training (epoch:',i+1,')')
     for j in range(train_batch):
         batch = next(iter(train_iter)) # for batch in train_iter
-        x=batch.text.transpose(0,1).to(torch.float32).to(device)
+        x=batch.text.transpose(0,1).to(torch.float32)
+        x=Variable(x).to(device)
         y=(batch.label-1).to(device)
-        y_hat = net.forward(Variable(torch.Tensor(x)), len(x))
+        y_hat = net.forward(x, len(x))
         # y = torch.max(torch.Tensor(y), 1)[1]
         loss = net.criterion(y_hat, y)
         loss_val=loss.item()
