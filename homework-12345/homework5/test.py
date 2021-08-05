@@ -50,11 +50,11 @@ LABEL.build_vocab(train)
 # %%
 
 # make iterator for splits
-train_iter, val_iter, test_iter = data.BucketIterator.splits(
-    (train, val, test), batch_size=64)
+_, val_iter, test_iter = data.BucketIterator.splits(
+    (train, val, test), batch_size=2210)
 
 # print batch information
-batch = next(iter(train_iter)) # for batch in train_iter
+# batch = next(iter(train_iter)) # for batch in train_iter
 
 # Attention: batch.label in the range [1,5] not [0,4] !!!
 
@@ -123,7 +123,7 @@ class Classify(nn.Module):
 # %%
 # train_, test_, vocab = processData()
 # embedding_table = word_embedding(len(vocab), embedding_size)
-train_iter, val_iter, test_iter = data.BucketIterator.splits(
+train_iter, val_iter, _ = data.BucketIterator.splits(
     (train, val, test), batch_size=batch_size)
 
 # %%
@@ -139,15 +139,15 @@ max_acc = 0.0 # 记录最大准确率的值
 
 test_batch=(len(test)//batch_size)
 train_batch=(len(train)//batch_size)
-total_test=batch_size*test_batch
+total_test=len(test)
 total_train=batch_size*train_batch
 loss_list=[]
 acc_list=[]
 ej = 0
 for i in range(epoch):
     print('training (epoch:',i+1,')')
-    for j in range(train_batch):
-        batch = next(iter(train_iter)) # for batch in train_iter
+    for j, batch in enumerate(train_iter):
+        # batch = next(iter(train_iter)) # for batch in train_iter
         x=batch.text.transpose(0,1).to(torch.float32)
         x=Variable(x).to(device)
         y=(batch.label-1).to(device)
@@ -165,24 +165,26 @@ for i in range(epoch):
         
         # if ej%eval_time == 0:    
             # 测试
-    with torch.no_grad():
+        with torch.no_grad():
                 print('testing (epoch:',i+1,')')
                 num = 0
-                for k in range(test_batch):
-                    batch = next(iter(test_iter)) # for batch in train_iter
-                    x=batch.text.transpose(0,1).to(torch.float32)
-                    x=Variable(x).to(device)
-                    y=batch.label-1
-                    x=x.to(device)
-                    y=y.to(device)
-                    y_hat = net.forward(x, len(x))
-                    y_hat = np.argmax(y_hat.cpu().numpy(),axis=1)
-                    num+=len(np.where((y_hat-y.cpu().numpy())==0)[0])
+                # for k in range(test_batch):
+                batch = next(iter(test_iter)) # for batch in train_iter
+                x=batch.text.transpose(0,1).to(torch.float32)
+                x=Variable(x).to(device)
+                y=batch.label-1
+                x=x.to(device)
+                y=y.to(device)
+                y_hat = net.forward(x, len(x))
+                y_hat = np.argmax(y_hat.cpu().numpy(),axis=1)
+                num=len(np.where((y_hat-y.cpu().numpy())==0)[0])
                 print( num,total_test)
                 acc = round(num/total_test, 4)
                 if acc > max_acc:
                     max_acc = acc
-                    if max_acc>0.5:
+                    if max_acc>0.1:
+                        import pdb
+                        pdb.set_trace()
                         filename='res/'+info_str+'_loss_'+str(round(loss.item(),4))+'_acc_'+str(max_acc)+'.pth'
                         torch.save(net, filename)
                         print("save in " + filename)    
