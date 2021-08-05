@@ -173,7 +173,6 @@ for i in range(epoch):
                     num+=len(np.where((y_hat-y.numpy())==0)[0])
                 print( num,total_test)
                 acc = round(num/total_test, 4)
-                acc_list.append(acc)
                 if acc > max_acc:
                     max_acc = acc
                 print('epoch:', i+1, ' | accuracy = ', acc, ' | max_acc = ', max_acc)
