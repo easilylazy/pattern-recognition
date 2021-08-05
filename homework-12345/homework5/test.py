@@ -184,7 +184,7 @@ for i in range(epoch):
                     max_acc = acc
                     if max_acc>0.5:
                         info_str+='_loss_'+str(round(loss.item(),4))+'_acc_'+str(max_acc)
-                        filename=info_str+'.pth'
+                        filename='res/'+info_str+'.pth'
                         torch.save(net.state_dict(), filename)
                         print("save in " + filename)    
 
@@ -192,6 +192,11 @@ for i in range(epoch):
                 print('epoch:', i+1, ' | accuracy = ', acc, ' | max_acc = ', max_acc)
     acc_list.append(acc)    
     loss_list.append(loss_val)
+    if (epoch+1)%10==0:
+                        info_str+='_epoch_'+str(i)+'_loss_'+str(round(loss.item(),4))+'_acc_'+str(max_acc)
+                        filename='res/'+info_str+'.pth'
+                        torch.save(net.state_dict(), filename)
+                        print("save in " + filename)    
 
 
 
