@@ -192,3 +192,6 @@ info_str+='_loss_'+str(round(loss.item(),4))+'_acc_'+str(max_acc)
 from plot import plot_loss_and_acc
 
 plot_loss_and_acc({'res': [loss_list, acc_list]},show=False,title=info_str)
+filename=info_str+'.pth'
+torch.save(net.state_dict(), filename)
+print("save in " + filename)
