@@ -16,6 +16,7 @@ from os import stat
 import sys, getopt
 
 torch.manual_seed(1)
+device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 # %%
@@ -84,7 +85,7 @@ print(pretrained_embeddings.shape)
 from param import get_param
 info_str,max_len ,embedding_size ,hidden_size ,batch_size,epoch,label_num ,eval_time =get_param()
 
-
+num_layers=2
 # %%
 class Classify(nn.Module):
     def __init__(self,vocab_len, embedding_table):
@@ -96,19 +97,20 @@ class Classify(nn.Module):
         self.embedding_size = embedding_size
         self.hidden_size= hidden_size
         self.label_num = label_num
-        self.lstm = nn.LSTM(input_size=self.embedding_size, hidden_size=self.hidden_size,num_layers=1,dropout=0.8,bidirectional=True)
-        self.init_w = Variable(torch.Tensor(1, 2*self.hidden_size), requires_grad=True)
+        self.lstm = nn.LSTM(input_size=self.embedding_size, hidden_size=self.hidden_size,num_layers=num_layers,dropout=0.8)#,bidirectional=True)
+        self.init_w = Variable(torch.Tensor(1, self.hidden_size), requires_grad=True)
+        torch.nn.init.uniform_(self.init_w)
         self.init_w = nn.Parameter(self.init_w)
-        self.linear = nn.Linear(2*self.hidden_size, self.label_num)
+        self.linear = nn.Linear(self.hidden_size, self.label_num)
         self.criterion  = nn.CrossEntropyLoss()
-        self.optim = torch.optim.Adam(self.parameters())
+        self.optim = torch.optim.Adam(self.parameters(),lr=1e-3)
     
     def forward(self, input, batch_size):
         input = self.embedding_table(input.long()) # input:[batch_size, max_len, embedding_size]
-        h0 = Variable(torch.zeros(2, batch_size, self.hidden_size))
-        c0 = Variable(torch.zeros(2, batch_size, self.hidden_size))
+        h0 = Variable(torch.zeros(num_layers, batch_size, self.hidden_size))
+        c0 = Variable(torch.zeros(num_layers, batch_size, self.hidden_size))
         lstm_out, _ = self.lstm(input.permute(1,0,2),(h0,c0))
-        lstm_out = F.tanh(lstm_out) # [max_len, bach_size, hidden_size]
+        lstm_out = torch.tanh(lstm_out) # [max_len, bach_size, hidden_size]
         M = torch.matmul(self.init_w, lstm_out.permute(1,2,0))
         alpha = F.softmax(M,dim=0)  # [batch_size, 1, max_len]
         out = torch.matmul(alpha, lstm_out.permute(1,0,2)).squeeze() # out:[batch_size, hidden_size]
@@ -128,6 +130,7 @@ train_iter, val_iter, test_iter = data.BucketIterator.splits(
 
 # print batch information
 net = Classify(len(TEXT.vocab),pretrained_embeddings)
+net=net.to(device)
 net.embedding_table.weight.data.copy_(pretrained_embeddings)
 # embedding_table)
 print(net.embedding_table)
@@ -145,8 +148,8 @@ for i in range(epoch):
     print('training (epoch:',i+1,')')
     for j in range(train_batch):
         batch = next(iter(train_iter)) # for batch in train_iter
-        x=batch.text.transpose(0,1).to(torch.float32)
-        y=batch.label-1
+        x=batch.text.transpose(0,1).to(torch.float32).to(device)
+        y=(batch.label-1).to(device)
         y_hat = net.forward(Variable(torch.Tensor(x)), len(x))
         # y = torch.max(torch.Tensor(y), 1)[1]
         loss = net.criterion(y_hat, y)
@@ -168,6 +171,8 @@ for i in range(epoch):
                     batch = next(iter(test_iter)) # for batch in train_iter
                     x=batch.text.transpose(0,1).to(torch.float32)
                     y=batch.label-1
+                    x=x.to(device)
+                    y=y.to(device)
                     y_hat = net.forward(Variable(torch.Tensor(x)), len(x))
                     y_hat = np.argmax(y_hat.numpy(),axis=1)
                     num+=len(np.where((y_hat-y.numpy())==0)[0])
