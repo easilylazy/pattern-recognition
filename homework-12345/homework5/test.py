@@ -182,9 +182,7 @@ for i in range(epoch):
                 acc = round(num/total_test, 4)
                 if acc > max_acc:
                     max_acc = acc
-                    if max_acc>0.1:
-                        import pdb
-                        pdb.set_trace()
+                    if max_acc>0.5:
                         filename='res/'+info_str+'_loss_'+str(round(loss.item(),4))+'_acc_'+str(max_acc)+'.pth'
                         torch.save(net, filename)
                         print("save in " + filename)    
