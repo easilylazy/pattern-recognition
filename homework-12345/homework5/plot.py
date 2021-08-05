@@ -31,7 +31,7 @@ def plot_loss_and_acc(loss_and_acc_dict,save=True,show=True,path='res/',title='l
 		if show:
 			plt.show()
 
-		maxEpoch = len(tmp[0][0])
+		maxEpoch = len(tmp[0][1])
 
 		maxAcc = min(1, max([max(x[1]) for x in loss_and_acc_dict.values()]) + 0.1)
 		minAcc = max(0, min([min(x[1]) for x in loss_and_acc_dict.values()]) - 0.1)
@@ -41,6 +41,8 @@ def plot_loss_and_acc(loss_and_acc_dict,save=True,show=True,path='res/',title='l
 		fig = plt.figure()
 
 		for name, lossAndAcc in loss_and_acc_dict.items():
+			import pdb
+			pdb.set_trace()
 			plt.plot(range(1, 1 + maxEpoch), lossAndAcc[1], '-s', label=name)
 
 		plt.xlabel('Epoch')
