@@ -83,7 +83,7 @@ print(pretrained_embeddings.shape)
 # label_num = 6
 # eval_time = 15 # 每训练100个batch后对测试集或验证集进行测试
 from param import get_param
-info_str,max_len ,embedding_size ,hidden_size ,batch_size,epoch,label_num ,eval_time =get_param()
+info_str,max_len ,embedding_size ,hidden_size ,batch_size,epoch,label_num ,eval_time,_ =get_param()
 info_str='bidr_'+info_str
 num_layers=2
 bidirectional=True
@@ -111,7 +111,7 @@ class Classify(nn.Module):
         torch.nn.init.uniform_(self.init_w)
         self.init_w = nn.Parameter(self.init_w).to(device)
         self.linear = nn.Linear(self.total_hidden_size, self.label_num)
-        self.criterion  = nn.CrossEntropyLoss()
+        self.criterion  = nn.CrossEntropyLoss().to(device)
         self.optim = torch.optim.Adam(self.parameters(),lr=1e-3)
     
     def forward(self, input, batch_size):
@@ -123,7 +123,7 @@ class Classify(nn.Module):
         M = torch.matmul(self.init_w, lstm_out.permute(1,2,0))
         alpha = F.softmax(M,dim=0)  # [batch_size, 1, max_len]
         out = torch.matmul(alpha, lstm_out.permute(1,0,2)).squeeze() # out:[batch_size, hidden_size]
-        predict = F.softmax(self.linear(out)) # out:[batch_size, label_num]
+        predict = F.softmax(self.linear(out),dim=1) # out:[batch_size, label_num]
         return predict
 
 

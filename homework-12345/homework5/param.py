@@ -36,7 +36,10 @@ for opt, arg in opts:
         if arg == 'False':
             test_choice=False
 info_str= (
-    "_ada_"
+    "_lr_"
+    + str(learning_rate_SGD)
+    + "_de_"
+    + str(weight_decay)
     + '_len_'
     +str(max_len)
     +'_hid_'
@@ -54,6 +57,6 @@ print(info_str)
 
 def get_param():
 
-    return info_str,max_len ,embedding_size ,hidden_size ,batch_size,epoch,label_num ,eval_time 
+    return info_str,max_len ,embedding_size ,hidden_size ,batch_size,epoch,label_num ,eval_time,learning_rate_SGD,weight_decay 
 if __name__=='__main__':
     print(get_param())
