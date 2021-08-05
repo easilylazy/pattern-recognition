@@ -101,12 +101,16 @@ class Classify(nn.Module):
         self.embedding_table = nn.Embedding(vocab_len, embedding_size)
         self.embedding_size = embedding_size
         self.hidden_size= hidden_size
+        if bidirectional:
+            self.total_hidden_size=2*self.hidden_size
+        else:
+            self.total_hidden_size=self.hidden_size
         self.label_num = label_num
         self.lstm = nn.LSTM(input_size=self.embedding_size, hidden_size=self.hidden_size,num_layers=num_layers,dropout=0.8,bidirectional=bidirectional)
-        self.init_w = Variable(torch.Tensor(1, self.hidden_size), requires_grad=True)
+        self.init_w = Variable(torch.Tensor(1, self.total_hidden_size), requires_grad=True)
         torch.nn.init.uniform_(self.init_w)
         self.init_w = nn.Parameter(self.init_w).to(device)
-        self.linear = nn.Linear(self.hidden_size, self.label_num)
+        self.linear = nn.Linear(self.total_hidden_size, self.label_num)
         self.criterion  = nn.CrossEntropyLoss()
         self.optim = torch.optim.Adam(self.parameters(),lr=1e-3)
     
