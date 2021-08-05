@@ -84,7 +84,7 @@ print(pretrained_embeddings.shape)
 # eval_time = 15 # 每训练100个batch后对测试集或验证集进行测试
 from param import get_param
 info_str,max_len ,embedding_size ,hidden_size ,batch_size,epoch,label_num ,eval_time =get_param()
-
+info_str='dr_'+info_str
 num_layers=2
 # %%
 class Classify(nn.Module):
