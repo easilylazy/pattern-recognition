@@ -177,7 +177,7 @@ for i in range(epoch):
                 if acc > max_acc:
                     max_acc = acc
                 print('epoch:', i+1, ' | accuracy = ', acc, ' | max_acc = ', max_acc)
-    acc_list.append(acc)
+    acc_list.append(acc)    
     loss_list.append(loss_val)
 
 
