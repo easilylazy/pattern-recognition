@@ -50,11 +50,9 @@ LABEL.build_vocab(train)
 # %%
 
 # make iterator for splits
-train_iter, val_iter, test_iter = data.BucketIterator.splits(
-    (train, val, test), batch_size=64)
+_, val_iter, test_iter = data.BucketIterator.splits(
+    (train, val, test), batch_size=2210)
 
-# print batch information
-batch = next(iter(train_iter)) # for batch in train_iter
 
 # Attention: batch.label in the range [1,5] not [0,4] !!!
 
@@ -83,7 +81,7 @@ print(pretrained_embeddings.shape)
 # label_num = 6
 # eval_time = 15 # 每训练100个batch后对测试集或验证集进行测试
 from param import get_param
-info_str,max_len ,embedding_size ,hidden_size ,batch_size,epoch,label_num ,eval_time,_,_ =get_param()
+info_str,max_len ,embedding_size ,hidden_size ,batch_size,epoch,label_num ,eval_time,learning_rate,weight_decay =get_param()
 info_str='bidr_'+info_str
 num_layers=2
 bidirectional=True
@@ -112,7 +110,7 @@ class Classify(nn.Module):
         self.init_w = nn.Parameter(self.init_w).to(device)
         self.linear = nn.Linear(self.total_hidden_size, self.label_num)
         self.criterion  = nn.CrossEntropyLoss().to(device)
-        self.optim = torch.optim.Adam(self.parameters(),lr=1e-3)
+        self.optim = torch.optim.Adam(self.parameters(),lr=learning_rate,weight_decay=weight_decay)
     
     def forward(self, input, batch_size):
         input = self.embedding_table(input.long()) # input:[batch_size, max_len, embedding_size]
@@ -132,7 +130,7 @@ class Classify(nn.Module):
 # %%
 # train_, test_, vocab = processData()
 # embedding_table = word_embedding(len(vocab), embedding_size)
-train_iter, val_iter, test_iter = data.BucketIterator.splits(
+train_iter, val_iter, _ = data.BucketIterator.splits(
     (train, val, test), batch_size=batch_size)
 
 # %%
@@ -146,22 +144,18 @@ print(net.embedding_table)
 optim = net.optim
 max_acc = 0.0 # 记录最大准确率的值
 
-test_batch=(len(test)//batch_size)
-train_batch=(len(train)//batch_size)
-total_test=batch_size*test_batch
-total_train=batch_size*train_batch
+total_test=len(test)
+total_train=len(train)
 loss_list=[]
 acc_list=[]
 ej = 0
 for i in range(epoch):
     print('training (epoch:',i+1,')')
-    for j in range(train_batch):
-        batch = next(iter(train_iter)) # for batch in train_iter
+    for j, batch in enumerate(train_iter):
         x=batch.text.transpose(0,1).to(torch.float32)
         x=Variable(x).to(device)
         y=(batch.label-1).to(device)
         y_hat = net.forward(x, len(x))
-        # y = torch.max(torch.Tensor(y), 1)[1]
         loss = net.criterion(y_hat, y)
         loss_val=loss.item()
         
@@ -172,28 +166,36 @@ for i in range(epoch):
         loss.backward(retain_graph=True)
         net.optim.step()
         
-        # if ej%eval_time == 0:    
+        if ej%eval_time == 0:    
             # 测试
-    with torch.no_grad():
+            with torch.no_grad():
                 print('testing (epoch:',i+1,')')
-                num = 0
-                for k in range(test_batch):
-                    batch = next(iter(test_iter)) # for batch in train_iter
-                    x=batch.text.transpose(0,1).to(torch.float32)
-                    x=Variable(x).to(device)
-                    y=batch.label-1
-                    x=x.to(device)
-                    y=y.to(device)
-                    y_hat = net.forward(x, len(x))
-                    y_hat = np.argmax(y_hat.cpu().numpy(),axis=1)
-                    num+=len(np.where((y_hat-y.cpu().numpy())==0)[0])
+                batch = next(iter(test_iter)) # for batch in train_iter
+                x=batch.text.transpose(0,1).to(torch.float32)
+                x=Variable(x).to(device)
+                y=batch.label-1
+                x=x.to(device)
+                y=y.to(device)
+                y_hat = net.forward(x, len(x))
+                y_hat = np.argmax(y_hat.cpu().numpy(),axis=1)
+                num=len(np.where((y_hat-y.cpu().numpy())==0)[0])
                 print( num,total_test)
                 acc = round(num/total_test, 4)
                 if acc > max_acc:
                     max_acc = acc
+                    if max_acc>0.5:
+                        filename='res/'+info_str+'_loss_'+str(round(loss.item(),4))+'_acc_'+str(max_acc)+'.pth'
+                        torch.save(net, filename)
+                        print("save in " + filename)    
+
+
                 print('epoch:', i+1, ' | accuracy = ', acc, ' | max_acc = ', max_acc)
     acc_list.append(acc)    
     loss_list.append(loss_val)
+    if (epoch+1)%10==0:
+                        filename='res/'+info_str+'_loss_'+str(round(loss.item(),4))+'_acc_'+str(max_acc)+'.pth'
+                        torch.save(net, filename)
+                        print("save in " + filename)    
 
 
 
