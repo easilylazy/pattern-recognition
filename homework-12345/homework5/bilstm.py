@@ -84,8 +84,13 @@ print(pretrained_embeddings.shape)
 # eval_time = 15 # 每训练100个batch后对测试集或验证集进行测试
 from param import get_param
 info_str,max_len ,embedding_size ,hidden_size ,batch_size,epoch,label_num ,eval_time =get_param()
-info_str='dr_'+info_str
+info_str='bidr_'+info_str
 num_layers=2
+bidirectional=True
+if bidirectional:
+    total_layers=num_layers*2
+else:
+    total_layers=num_layers
 # %%
 class Classify(nn.Module):
     def __init__(self,vocab_len, embedding_table):
@@ -97,7 +102,7 @@ class Classify(nn.Module):
         self.embedding_size = embedding_size
         self.hidden_size= hidden_size
         self.label_num = label_num
-        self.lstm = nn.LSTM(input_size=self.embedding_size, hidden_size=self.hidden_size,num_layers=num_layers,dropout=0.8)#,bidirectional=True)
+        self.lstm = nn.LSTM(input_size=self.embedding_size, hidden_size=self.hidden_size,num_layers=num_layers,dropout=0.8,bidirectional=bidirectional)
         self.init_w = Variable(torch.Tensor(1, self.hidden_size), requires_grad=True)
         torch.nn.init.uniform_(self.init_w)
         self.init_w = nn.Parameter(self.init_w).to(device)
@@ -107,8 +112,8 @@ class Classify(nn.Module):
     
     def forward(self, input, batch_size):
         input = self.embedding_table(input.long()) # input:[batch_size, max_len, embedding_size]
-        h0 = Variable(torch.zeros(num_layers, batch_size, self.hidden_size)).to(device)
-        c0 = Variable(torch.zeros(num_layers, batch_size, self.hidden_size)).to(device)
+        h0 = Variable(torch.zeros(total_layers, batch_size, self.hidden_size)).to(device)
+        c0 = Variable(torch.zeros(total_layers, batch_size, self.hidden_size)).to(device)
         lstm_out, _ = self.lstm(input.permute(1,0,2),(h0,c0))
         lstm_out = torch.tanh(lstm_out) # [max_len, bach_size, hidden_size]
         M = torch.matmul(self.init_w, lstm_out.permute(1,2,0))
