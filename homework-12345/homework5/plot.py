@@ -41,8 +41,6 @@ def plot_loss_and_acc(loss_and_acc_dict,save=True,show=True,path='res/',title='l
 		fig = plt.figure()
 
 		for name, lossAndAcc in loss_and_acc_dict.items():
-			import pdb
-			pdb.set_trace()
 			plt.plot(range(1, 1 + maxEpoch), lossAndAcc[1], '-s', label=name)
 
 		plt.xlabel('Epoch')
