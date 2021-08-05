@@ -163,9 +163,9 @@ for i in range(epoch):
         loss.backward(retain_graph=True)
         net.optim.step()
         
-        # if ej%eval_time == 0:    
+        if ej%eval_time == 0:    
             # 测试
-        with torch.no_grad():
+            with torch.no_grad():
                 print('testing (epoch:',i+1,')')
                 num = 0
                 # for k in range(test_batch):
