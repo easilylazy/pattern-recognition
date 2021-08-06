@@ -7,8 +7,8 @@ batch_size = 64
 epoch = 40
 label_num = 5
 eval_time = 100 # 每训练100个batch后对测试集或验证集进行测试
-learning_rate_SGD=0.01
-weight_decay=0.01
+learning_rate=0.001
+weight_decay=0
 try:
     argv=(sys.argv[1:])
     opts, args = getopt.getopt(argv,"b:e:m:i:l:w:d:t:h:",["ifile=","ofile="])
@@ -29,7 +29,7 @@ for opt, arg in opts:
     elif opt == '-i':
         init_std=eval(arg)
     elif opt == '-l':
-        learning_rate_SGD=eval(arg)
+        learning_rate=eval(arg)
     elif opt == '-w':
         weight_decay=eval(arg)
     elif opt == '-t':
@@ -37,7 +37,7 @@ for opt, arg in opts:
             test_choice=False
 info_str= (
     "_lr_"
-    + str(learning_rate_SGD)
+    + str(learning_rate)
     + "_de_"
     + str(weight_decay)
     + '_len_'
@@ -57,6 +57,6 @@ print(info_str)
 
 def get_param():
 
-    return info_str,max_len ,embedding_size ,hidden_size ,batch_size,epoch,label_num ,eval_time,learning_rate_SGD,weight_decay 
+    return info_str,max_len ,embedding_size ,hidden_size ,batch_size,epoch,label_num ,eval_time,learning_rate,weight_decay 
 if __name__=='__main__':
     print(get_param())
