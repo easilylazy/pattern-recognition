@@ -50,8 +50,11 @@ LABEL.build_vocab(train)
 # %%
 
 # make iterator for splits
-first_iter, val_iter, test_iter = data.BucketIterator.splits(
+_, _, test_iter = data.BucketIterator.splits(
     (train, val, test), batch_size=2210)
+_, val_iter, _ = data.BucketIterator.splits(
+    (train, val, test), batch_size=1101)
+
 
 
 # Attention: batch.label in the range [1,5] not [0,4] !!!
@@ -107,7 +110,7 @@ class Classify(nn.Module):
         self.label_num = label_num
         self.lstm = nn.LSTM(input_size=self.embedding_size, hidden_size=self.hidden_size,num_layers=num_layers,dropout=drop_out,bidirectional=bidirectional)
         self.init_w = Variable(torch.Tensor(1, self.total_hidden_size), requires_grad=True)
-        torch.nn.init.normal_ (self.init_W, mean=0, std=1)
+        torch.nn.init.normal_ (self.init_w, mean=0, std=1)
         self.init_w = nn.Parameter(self.init_w).to(device)
         self.linear = nn.Linear(self.total_hidden_size, self.label_num)
         self.criterion  = nn.CrossEntropyLoss().to(device)
@@ -135,6 +138,7 @@ class Classify(nn.Module):
 train_iter, val_iter, _ = data.BucketIterator.splits(
     (train, val, test), batch_size=batch_size,shuffle=True)
 test_batch = next(iter(test_iter)) # for batch in train_iter
+val_batch = next(iter(val_iter)) # for batch in train_iter
 
 # %%
 
@@ -146,6 +150,8 @@ net.embedding_table.weight.data.copy_(pretrained_embeddings)
 print(net.embedding_table)
 optim = net.optim
 max_acc = 0.0 # 记录最大准确率的值
+val_max_acc = 0.0 # 记录最大准确率的值
+val_max_num=0
 
 total_test=len(test)
 total_train=len(train)
@@ -170,7 +176,7 @@ for i in range(epoch):
 
         
         ej += 1
-        if (ej+1)%10 == 0:
+        if (ej+1)%100 == 0:
             print('epoch:', i+1,'/',epoch, ' | batch' , j*batch_size,'/',total_train ,' | loss = ', loss_val)
         loss.backward(retain_graph=True)
         net.optim.step()
@@ -207,9 +213,28 @@ for i in range(epoch):
     acc_list.append(acc)    
     loss_list.append(loss_val)
     acc_train = round(train_num/total_train, 4)
+    with torch.no_grad():
+                print('validation (epoch:',i+1,')')
+                batch=test_batch
+                x=batch.text.transpose(0,1).to(torch.float32)
+                x=Variable(x).to(device)
+                y=batch.label-1
+                x=x.to(device)
+                y=y.to(device)
+                y_hat = net.forward(x, len(x))
+                y_hat = np.argmax(y_hat.cpu().numpy(),axis=1)
+                num=len(np.where((y_hat-y.cpu().numpy())==0)[0])
+                print( num,total_test)
+                val_acc = round(num/total_test, 4)
+                if val_acc>val_max_acc:
+                    val_max_acc=val_acc
+                    val_max_num=0
+                else:
+                    val_max_num+=1
     print('train acc',acc_train)
-    if (epoch+1)%10==0:
-                        filename='res/'+info_str+'_loss_'+str(round(loss.item(),4))+'_acc_'+str(max_acc)+'.pth'
+    print('val acc',val_acc)
+    if (i+1)%10==0:
+                        filename='res/'+info_str+'_epoch_'+str(i+1)+'_loss_'+str(round(loss.item(),4))+'_acc_'+str(acc)+'.pth'
                         torch.save(net, filename)
                         print("save in " + filename)    
 
