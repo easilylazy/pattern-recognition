@@ -14,7 +14,7 @@ import numpy as np
 from os import stat
 import sys, getopt
 
-torch.manual_seed(1)
+torch.manual_seed(2)
 device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
@@ -98,36 +98,104 @@ class Classify(nn.Module):
 # train_, test_, vocab = processData()
 # embedding_table = word_embedding(len(vocab), embedding_size)
 train_iter, val_iter, test_iter = data.BucketIterator.splits(
-    (train, val, test), batch_size=batch_size)
+    (train, val, test), batch_size=20)
 
+
+def feature_scalling(X):
+    mmin = X.min()
+    mmax = X.max()
+    return (X - mmin) / (mmax - mmin), mmin, mmax
+
+x_train, mmin, mmax = feature_scalling(next(iter(train_iter)).text)
+print(mmin,mmax)
+print(x_train)
 # %%
 
-# print batch information
-net = Classify(len(TEXT.vocab),pretrained_embeddings)
-net=net.to(device)
-net.embedding_table.weight.data.copy_(pretrained_embeddings)
-# embedding_table)
-print(net.embedding_table)
-optim = net.optim
+# # print batch information
+# net = Classify(len(TEXT.vocab),pretrained_embeddings)
+# net=net.to(device)
+# net.embedding_table.weight.data.copy_(pretrained_embeddings)
+# # embedding_table)
+# print(net.embedding_table)
+# optim = net.optim
 
-path='pth\\dr__lr_0.01_de_0.01_len_32_hid_32_emb_300_epo_40_bat_15_eval_100_loss_1.5905_acc_0.5297_loss_1.4428_acc_0.5941_loss_1.3352_acc_0.6286_loss_1.1809_acc_0.6295_loss_1.1129_acc_0.649.pth'
-net.load_state_dict(torch.load(path,map_location=device),False)
+path='pth\\dr__lr_0.01_de_0.01_len_32_hid_32_emb_300_epo_40_bat_15_eval_100_loss_1.401_acc_0.6213.pth'
+    # dr__lr_0.01_de_0.01_len_32_hid_32_emb_300_epo_40_bat_15_eval_100_loss_1.5905_acc_0.5297_loss_1.4428_acc_0.5941_loss_1.3352_acc_0.6286_loss_1.1809_acc_0.6295_loss_1.1129_acc_0.649.pth'
+net=torch.load(path,map_location=device)
 net.eval()
 with torch.no_grad():
                 print('testing (epoch:',1,')')
                 num = 0
                 for k in range(1):
-                    batch = next(iter(test_iter)) # for batch in train_iter
+                    batch = next(iter(train_iter)) # for batch in train_iter
                     x=batch.text.transpose(0,1).to(torch.float32)
+                    print(x)
+
                     x=Variable(x).to(device)
                     y=batch.label-1
                     x=x.to(device)
                     y=y.to(device)
                     y_hat = net.forward(x, len(x))
                     y_hat = np.argmax(y_hat.cpu().numpy(),axis=1)
-                    num+=len(np.where((y_hat-y.cpu().numpy())==0)[0])
-                print( num,batch_size)
-                acc = round(num/batch_size, 4)
-                # if acc > max_acc:
-                #     max_acc = acc
-                print('epoch:', 1, ' | accuracy = ', acc)
+                    print(len(np.where((0-y.cpu().numpy())==0)[0]))
+                    print(len(np.where((1-y.cpu().numpy())==0)[0]))
+                    print(len(np.where((2-y.cpu().numpy())==0)[0]))
+                    print(len(np.where((3-y.cpu().numpy())==0)[0]))
+                    print(len(np.where((4-y.cpu().numpy())==0)[0]))
+
+                    print(len(np.where((0-y_hat)==0)[0]))
+                    print(len(np.where((1-y_hat)==0)[0]))
+                    print(len(np.where((2-y_hat)==0)[0]))
+                    print(len(np.where((3-y_hat)==0)[0]))
+                    print(len(np.where((4-y_hat)==0)[0]))
+                    num=len(np.where((y_hat-y.cpu().numpy())==0)[0])
+                    print( num,batch_size)
+                    acc = round(num/batch_size, 4)
+                    print(y)
+                    print(y_hat)
+                    # if acc > max_acc:
+                    #     max_acc = acc
+                    print('epoch:', 1, ' | accuracy = ', acc)
+
+batch_size = 2000
+
+
+train_iter, val_iter, test_iter = data.BucketIterator.splits(
+    (train, val, test), batch_size=batch_size)
+test_batch=(len(test)//batch_size)
+train_batch=(len(train)//batch_size)
+total_test=batch_size*test_batch
+total_train=batch_size*train_batch
+loss_list=[]
+acc_list=[]
+ej = 0
+
+batch = next(iter(test_iter)) # for batch in train_iter
+print(len(test_iter))
+print(len(train_iter))
+# for i in range(len(test_iter)):
+#     print(test_iter[i][:9])
+with torch.no_grad():
+                print('testing (epoch:',10,')')
+                num = 0
+                record=np.zeros(5)
+                for i, batch in enumerate(train_iter):
+                    x=batch.text.transpose(0,1).to(torch.float32)
+                    x=Variable(x).to(device)
+                    y=batch.label-1
+                    print(y[:19])
+                    x=x.to(device)
+                    y=y.to(device)
+                    y_hat = net.forward(x, len(x))
+                    y_hat = np.argmax(y_hat.cpu().numpy(),axis=1)
+                    num=len(np.where((y_hat-y.cpu().numpy())==0)[0])
+                    print(num)
+                    record[0]+=(len(np.where((0-y.cpu().numpy())==0)[0]))
+                    record[1]+=(len(np.where((1-y.cpu().numpy())==0)[0]))
+                    record[2]+=(len(np.where((2-y.cpu().numpy())==0)[0]))
+                    record[3]+=(len(np.where((3-y.cpu().numpy())==0)[0]))
+                    record[4]+=(len(np.where((4-y.cpu().numpy())==0)[0]))
+                print( num,total_test)
+                print(record)
+                acc = round(num/total_test, 4)
+                print('epoch:', 10, ' | accuracy = ', acc)

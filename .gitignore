@@ -29,3 +29,4 @@ ref/
 homework-12345/homework-2/homework2-mlp/test_soft.py
 *.bat
 !homework-12345\homework5\data
+homework-12345/homework5/filename.py
