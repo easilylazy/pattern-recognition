@@ -36,14 +36,38 @@ print('TEXT.vocab.vectors.size()', TEXT.vocab.vectors.size())
 
 # make iterator for splits
 train_iter, val_iter, test_iter = data.BucketIterator.splits(
-    (train, val, test), batch_size=64)
+    (train, val, test), batch_size=2000)
 
 # print batch information
-batch = next(iter(train_iter)) # for batch in train_iter
-print(batch.text) # input sequence
-print(batch.label) # groud truth
+# batch = next(iter(train_iter)) # for batch in train_iter
+# print(batch.text) # input sequence
+# print(batch.label) # groud truth
 
 # Attention: batch.label in the range [1,5] not [0,4] !!!
+
+# save format
+import numpy as np
+import pandas as pd
+import csv
+with torch.no_grad():
+    for i, batch in enumerate(train_iter):
+        x=batch.text.transpose(0,1).numpy()#.to(torch.float32)
+        y=(batch.label.numpy()-1).reshape(x.shape[0],1)
+        d = np.append(y, x, axis=1)
+        df = pd.DataFrame(d)#创建随机值
+        df.to_csv('train.csv',mode='a', index=False,header=None)
+    for i, batch in enumerate(test_iter):
+        x=batch.text.transpose(0,1).numpy()#.to(torch.float32)
+        y=(batch.label.numpy()-1).reshape(x.shape[0],1)
+        d = np.append(y, x, axis=1)
+        df = pd.DataFrame(d)#创建随机值
+        df.to_csv('test.csv',mode='a', index=False,header=None)
+    for i, batch in enumerate(val_iter):
+        x=batch.text.transpose(0,1).numpy()#.to(torch.float32)
+        y=(batch.label.numpy()-1).reshape(x.shape[0],1)
+        d = np.append(y, x, axis=1)
+        df = pd.DataFrame(d)#创建随机值
+        df.to_csv('val.csv',mode='a', index=False,header=None)
 
 
   
@@ -60,7 +84,7 @@ pretrained_embeddings = TEXT.vocab.vectors
 print(pretrained_embeddings.shape)
 
 # you should maintain a nn.embedding layer in your network
-model.embedding.weight.data.copy_(pretrained_embeddings)
+# model.embedding.weight.data.copy_(pretrained_embeddings)
 
 
 
