@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # 要添加一个新单元，输入 '# %%'
 # 要添加一个新的标记单元，输入 '# %% [markdown]'
 # %%
@@ -243,7 +244,7 @@ opt=Config()
 # print batch information
 net = ModelAttnBiLSTM(vocab_size=len(TEXT.vocab), 
                       embed_dim=300, 
-                      hidden_size=300,
+                      hidden_size=hidden_size,
                       class_num=opt.class_num,
                       pretrain_embed=pretrained_embeddings,
                       num_layers=opt.num_layers,
@@ -302,11 +303,11 @@ for i in range(epoch):
                 y=y.to(device)
                 y_hat = net.forward(x)
                 y_hat = np.argmax(y_hat.cpu().numpy(),axis=1)
-                print(len(np.where((0-y_hat)==0)[0]))
-                print(len(np.where((1-y_hat)==0)[0]))
-                print(len(np.where((2-y_hat)==0)[0]))
-                print(len(np.where((3-y_hat)==0)[0]))
-                print(len(np.where((4-y_hat)==0)[0]))
+                # print(len(np.where((0-y_hat)==0)[0]))
+                # print(len(np.where((1-y_hat)==0)[0]))
+                # print(len(np.where((2-y_hat)==0)[0]))
+                # print(len(np.where((3-y_hat)==0)[0]))
+                # print(len(np.where((4-y_hat)==0)[0]))
                 num=len(np.where((y_hat-y.cpu().numpy())==0)[0])
                 print( num,total_test)
                 acc = round(num/total_test, 4)
@@ -342,7 +343,7 @@ for i in range(epoch):
                     val_max_num+=1
     print('train acc',acc_train)
     print('val acc',val_acc)
-    if (i+1)%10==0:
+    if (i+1)%1==0:
                         filename='res/'+info_str+'_epoch_'+str(i+1)+'_loss_'+str(round(loss.item(),4))+'_acc_'+str(acc)+'.pth'
                         torch.save(net, filename)
                         print("save in " + filename)    
