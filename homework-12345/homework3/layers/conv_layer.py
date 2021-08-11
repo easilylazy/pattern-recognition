@@ -4,8 +4,16 @@ import numpy as np
 
 # if you implement ConvLayer by convolve function, you will use the following code.
 from scipy.signal import fftconvolve as convolve
-from scipy import signal 
-
+from scipy import signal
+from scipy.signal.ltisys import freqresp 
+def split_by_strides(X, kh, kw, s):
+    N, H, W, C = X.shape
+    oh = (H - kh) // s + 1
+    ow = (W - kw) // s + 1
+    shape = (N, oh, ow, kh, kw, C)
+    strides = (X.strides[0], X.strides[1]*s, X.strides[2]*s, *X.strides[1:])
+    A = np.lib.stride_tricks.as_strided(X, shape=shape, strides=strides)
+    return A
 class ConvLayer():
 	"""
 	2D convolutional layer.
@@ -32,6 +40,7 @@ class ConvLayer():
 
 		self.XavierInit()
 
+
 		self.grad_W = np.zeros_like(self.W)
 		self.grad_b = np.zeros_like(self.b)
 
@@ -52,29 +61,27 @@ class ConvLayer():
 	    # TODO: Put your code here
 		# Apply convolution operation to Input, and return results.
 		# Tips: you can use np.pad() to deal with padding.
-		try:
-			self.Input = Input
-			
-			input_after_pad = np.pad(Input, ((0,), (0,), (self.pad,), (self.pad,)), mode='constant', constant_values=0)
-			self.batch_size,self.channels,self.height,self.width=Input.shape
+		# try:
+		self.Input = Input
+		
+		input_after_pad = np.pad(Input, ((0,), (0,), (self.pad,), (self.pad,)), mode='constant', constant_values=0)
+		self.batch_size,self.channels,self.height,self.width=Input.shape
 
-			input_after_trans=input_after_pad.transpose(1,2,3,0)#  channels, height, width, batch_size
-			self.input_after_pad=input_after_pad
-			self.input_after_trans=input_after_trans
-			output=np.zeros((self.filters,self.height,self.width,self.batch_size))
-			# compute for each filter
+		inputs=input_after_pad.transpose(0,2,3,1)
+		# kh, kw, C, kn = self.filters.shape
+		kh=self.kernel_size
+		kw=self.kernel_size
+		s=1
+		print(Input.shape)
+		print(inputs.shape)
+		# filters=np.random.randint(9,size=(kernel_size,kernel_size,input_dim,channels)).astype(np.float32)
+		X_split = split_by_strides(inputs, kh, kw, s)   # X_split.shape: (N, oh, ow, kh, kw, C)
+		print(X_split.shape)
+		feature_map = np.tensordot(X_split,self.W, axes=[(3,4,5), (2,3,1)])
+		# print(split_by_strides(inputs,kernel_size,kernel_size,1).shape)
+		print(feature_map.shape)
 
-			# import pdb 
-			# pdb.set_trace()
-			for i in range(self.filters):
-				output[i]=signal.convolve(input_after_trans,np.flip(self.W[i][:,:,:,None],(0,1,2)),mode='valid')
-
-			return output.transpose(3,0,1,2)
-		except:
-			import pdb 
-			pdb.set_trace()
-
-
+		return feature_map.transpose(0,3,1,2),self.W
 
 
 	    ############################################################################
