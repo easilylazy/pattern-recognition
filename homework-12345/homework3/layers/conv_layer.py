@@ -82,7 +82,7 @@ class ConvLayer():
 		# print(split_by_strides(inputs,kernel_size,kernel_size,1).shape)
 		# print(feature_map.shape)
 
-		return feature_map.transpose(0,3,1,2),self.W
+		return feature_map.transpose(0,3,1,2)#,self.W
 
 
 	    ############################################################################
@@ -100,48 +100,22 @@ class ConvLayer():
 	    # TODO: Put your code here
 		# Calculate self.grad_W, self.grad_b, and return the new delta.
 
-		# for k in range(self.batch_size):
-		# 	for i in range(self.filters):
-		# 		# self.grad_W[i]+=(signal.convolve(self.input_after_pad[k].transpose(1,2,0),delta[k,i][:,:,None],mode='valid')).transpose(2,0,1)#.sum(axis=0)/self.batch_size
-		# 		self.grad_W[i]+=(signal.convolve(self.input_after_pad[k].transpose(1,2,0),np.flip(delta[k,i][:,:,None],(0,1,2)),mode='valid')).transpose(2,0,1)#.sum(axis=0)/self.batch_size
-		
-		# print(self.grad_W.shape)
-
-		# test_g_w=np.zeros(self.grad_W)
-
-
 		kh=self.kernel_size
 		kw=self.kernel_size
 		s=1
+		X_split = split_by_strides(self.input_after_trans, kh, kw, s)   # X_split.shape: (N, oh, ow, kh, kw, C)
+		self.grad_W = np.tensordot(X_split,delta, axes=[(0,1,2), (0,2,3)]).transpose(3,2,0,1)
+
+		self.grad_W/=self.batch_size
+		self.grad_b=delta.sum(axis=(0,2,3))/self.batch_size
 		# self.W = np.random.normal(0, init_std, (self.filters, self.inputs, self.kernel_size, self.kernel_size))
 
 		# shape-(batch_size, filters, output_height, output_width)
-		X_split = split_by_strides(self.input_after_trans, kh, kw, s)   # X_split.shape: (N, oh, ow, kh, kw, C)
-		print(X_split.shape)
-		print(delta.shape)
-		self.grad_W = np.tensordot(X_split,delta, axes=[(0,1,2), (0,2,3)])
+		pad=(self.kernel_size-1)//2
+		delta_after_pad = np.pad(delta, ((0,), (0,), (pad,), (pad,)), mode='constant', constant_values=0)
 
-		# print(test_g_w.shape)
+		X_split = split_by_strides(delta_after_pad.transpose(0,2,3,1), kh, kw, s)   # X_split.shape: (N, oh, ow, kh, kw, C)
+		local_delta = np.tensordot(np.flip(self.W,axis=(2,3)),X_split, axes=[(0,2,3), (5,3,4)])
 
-
-		# print(sum(abs(self.grad_W-test_g_w.transpose(3,2,0,1))))
-
-
-
-		self.grad_W/=self.batch_size
-		print(" success compute grad_w")
-		self.grad_b=delta.sum(axis=(0,2,3))/self.batch_size
-		print(" success compute grad_b")
-
-		local_delta=np.zeros(self.Input.shape)#self.batch_size, self.filters, self.height, self.width)
-		local_delta_re=local_delta.transpose(1,2,3,0)# self.filters, self.height, self.width, self.batch_size,self.batch_size
-		pad=(self.W.shape[0]-1)//2
-		for k in range(self.inputs):
-			local_delta_re[k]=signal.convolve(np.flip(delta.transpose(1,2,3,0),axis=(0)),self.W.transpose(1,0,2,3)[k][:,:,:,None],mode='same')[pad]
-			#signal.convolve(self.W.transpose(1,0,2,3)[k][:,:,:,None],np.flip(delta.transpose(1,2,3,0),axis=(0)),mode='same')[pad]#:-pad]
-			
-		local_delta=local_delta_re.transpose(3,0,1,2)
-		# print(" success compute delta")
-
-		return local_delta
+		return local_delta.transpose(1,0,2,3)
 	    ############################################################################
