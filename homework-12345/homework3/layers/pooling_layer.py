@@ -31,13 +31,18 @@ class MaxPoolingLayer():
 		try:
 			self.Input = Input
 			self.batch_size,self.channels,self.height,self.width=Input.shape
-			# input_after_pad = np.pad(Input, ((0,), (0,), (self.pad,), (self.pad,)), mode='constant', constant_values=0)
 			b_str,c_str,h_str,w_str=Input.strides
 			self.height_o=int(self.height / self.kernel_size)
 			self.width_o=int(self.width / self.kernel_size)
 			strides=(b_str,c_str,h_str*self.kernel_size,int(w_str)*self.kernel_size,h_str,w_str)
-			shape = (self.batch_size, self.channels, self.height_o, self.width_o, self.kernel_size, self.kernel_size)
-			return np.lib.stride_tricks.as_strided(Input,shape=shape,strides=strides).max(axis=(-2,-1))
+			self.shape = (self.batch_size, self.channels, self.height_o, self.width_o, self.kernel_size, self.kernel_size)
+	
+			self.block = np.lib.stride_tricks.as_strided(self.Input,shape=self.shape,strides=strides)
+
+			result=self.block.max(axis=(-2,-1))
+
+			
+			return result
 		except:
 			import pdb 
 			pdb.set_trace()
@@ -54,20 +59,21 @@ class MaxPoolingLayer():
 	    # TODO: Put your code here
 		# Calculate and return the new delta.
 		self.batch_size,self.channels,self.height,self.width=self.Input.shape
-		input_after_pad = np.pad(self.Input, ((0,), (0,), (self.pad,), (self.pad,)), mode='constant', constant_values=0)
-		b_str,c_str,h_str,w_str=input_after_pad.strides
-		strides=(b_str,c_str,h_str*self.kernel_size,int(w_str/self.width)*self.kernel_size,h_str,w_str)
-
-		shape = (self.batch_size, self.channels, self.height_o, self.width_o,self.kernel_size, self.kernel_size)
-
-		block = np.lib.stride_tricks.as_strided(input_after_pad,shape=shape,strides=strides)
-
-		input_reshape=block.reshape((self.batch_size*self.channels* self.height_o* self.width_o, self.kernel_size* self.kernel_size))
-		
+		input_reshape= self.block.reshape((self.batch_size*self.channels* self.height_o* self.width_o, self.kernel_size* self.kernel_size))
+			
 		input_arg=input_reshape.argmax(axis=1)
 		input_zero=np.zeros(input_reshape.shape)
-		input_zero[np.indices(input_arg.shape),input_arg]=1
+		input_test=np.zeros(self.Input.shape)
+		input_zero[np.indices(input_arg.shape),input_arg]=delta.ravel()
 
-		return np.multiply(input_zero.reshape(self.batch_size, self.channels, self.height_o, self.width_o,self.kernel_size* self.kernel_size),delta[:,:,:,:,None]).reshape(input_after_pad.shape)
+		h_str,w_str=input_zero.strides
+		strides=(self.height*h_str,w_str,h_str*self.kernel_size,h_str,int(w_str)*self.kernel_size,w_str)
+		block2 = np.lib.stride_tricks.as_strided(input_zero,shape=self.shape,strides=strides)
+		for i in range(self.batch_size):
+			for j in range(self.channels):
+				m=np.concatenate(block2[i][j],axis=1) 
+				input_test[i][j]=np.concatenate(m,axis=1) 
+
+		return input_test
 
 	    ############################################################################
