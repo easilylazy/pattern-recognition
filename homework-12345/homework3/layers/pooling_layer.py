@@ -31,14 +31,13 @@ class MaxPoolingLayer():
 		try:
 			self.Input = Input
 			self.batch_size,self.channels,self.height,self.width=Input.shape
-			input_after_pad = np.pad(Input, ((0,), (0,), (self.pad,), (self.pad,)), mode='constant', constant_values=0)
-
-			b_str,c_str,h_str,w_str=input_after_pad.strides
+			# input_after_pad = np.pad(Input, ((0,), (0,), (self.pad,), (self.pad,)), mode='constant', constant_values=0)
+			b_str,c_str,h_str,w_str=Input.strides
 			self.height_o=int(self.height / self.kernel_size)
 			self.width_o=int(self.width / self.kernel_size)
-			strides=(b_str,c_str,h_str*self.kernel_size,int(w_str/self.width)*self.kernel_size,h_str,w_str)
+			strides=(b_str,c_str,h_str*self.kernel_size,int(w_str)*self.kernel_size,h_str,w_str)
 			shape = (self.batch_size, self.channels, self.height_o, self.width_o, self.kernel_size, self.kernel_size)
-			return np.lib.stride_tricks.as_strided(input_after_pad,shape=shape,strides=strides).max(axis=(-2,-1))
+			return np.lib.stride_tricks.as_strided(Input,shape=shape,strides=strides).max(axis=(-2,-1))
 		except:
 			import pdb 
 			pdb.set_trace()
