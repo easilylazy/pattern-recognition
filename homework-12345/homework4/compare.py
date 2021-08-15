@@ -4,7 +4,7 @@ import pandas as pd
 
 filePath = 'csv'
 savepath= 'res/'
-filename='optim_com_'
+filename='act_com_'
 show=False
 
 datas=[]
@@ -12,7 +12,7 @@ types=[]
 for i,j,k in os.walk(filePath):
     print(i)
     for name in k:
-        if(name.startswith('conv_optim')):
+        if(name.startswith('conv_act')):
             print(name)
             print('csv/'+name)
             data=pd.read_csv('csv/'+name)
