@@ -14,6 +14,21 @@ def split_by_strides(X, kh, kw, s):
     strides = (X.strides[0], X.strides[1]*s, X.strides[2]*s, *X.strides[1:])
     A = np.lib.stride_tricks.as_strided(X, shape=shape, strides=strides)
     return A
+
+def im2col(X_pad,kh,kw,s=1):
+		N, C, H, W = X_pad.shape
+
+		oh = (H - kh) // s + 1
+		ow = (W - kw) // s + 1
+		shape = (N, C, oh, ow, kh, kw)
+		strides = (X_pad.strides[0], X_pad.strides[1],X_pad.strides[2], X_pad.strides[3]*s,X_pad.strides[2],X_pad.strides[3])
+		#  X_pad.strides[2]*s, *X.strides[1:])
+		A = np.lib.stride_tricks.as_strided(X_pad, shape=shape, strides=strides)
+		X_pad.strides
+		A_order=A.ravel().reshape(N,C, oh*ow,kh*kw)
+		foo1=np.concatenate([i for i in A_order],axis=2)
+		A_final=np.concatenate([i for i in foo1],axis=0)
+		return A_final
 class ConvLayer_im2col():
 	"""
 	2D convolutional layer.
@@ -73,34 +88,24 @@ class ConvLayer_im2col():
 		# kh, kw, C, kn = self.filters.shape
 		kh=self.kernel_size
 		kw=self.kernel_size
-		s=1
 		X_pad=self.input_after_pad
+		A_final=im2col(X_pad,kh,kw)
 		N, C, H, W = self.input_after_pad.shape
-
+		s=1
 		oh = (H - kh) // s + 1
 		ow = (W - kw) // s + 1
-		shape = (N, C, oh, ow, kh, kw)
-		strides = (X_pad.strides[0], X_pad.strides[1],X_pad.strides[2], X_pad.strides[3]*s,X_pad.strides[2],X_pad.strides[3])
-		#  X_pad.strides[2]*s, *X.strides[1:])
-		A = np.lib.stride_tricks.as_strided(X_pad, shape=shape, strides=strides)
-		X_pad.strides
-		A_order=A.ravel().reshape(N,C, oh*ow,kh*kw)
-		foo1=np.concatenate([i for i in A_order],axis=2)
-		A_final=np.concatenate([i for i in foo1],axis=0)
-		# A_final=np.concatenate([i for i in A_order],axis=0)
+
 		k_order=self.W.ravel().reshape(self.channels,self.inputs*self.kernel_size*self.kernel_size)
+		self.k_order=k_order
 		res_A=np.matmul(k_order,A_final)
 
 		h_s,w_s=res_A.strides
-		strides=    h_s,w_s*9,h_s,w_s
+		strides=    h_s,w_s*self.kernel_size*self.kernel_size,h_s,w_s
 		shape=(1,self.batch_size,self.channels,self.height*self.width)
 		res=np.lib.stride_tricks.as_strided(res_A, shape=shape, strides=strides)
 
 
 		return res.reshape(self.batch_size,self.channels,oh,ow)
-		# .reshape(self.batch_size,self.channels,oh,ow)
-		# .transpose(1,0,2,3)#,self.W
-
 
 	    ############################################################################
 
