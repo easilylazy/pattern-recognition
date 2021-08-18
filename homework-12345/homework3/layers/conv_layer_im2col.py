@@ -29,7 +29,7 @@ class ConvLayer_im2col():
 	def __init__(self, inputs,
 	             filters,
 	             kernel_size,
-	             pad,
+	             pad,W,
 	             trainable=True):
 		self.inputs = inputs
 		self.filters = filters
@@ -39,6 +39,7 @@ class ConvLayer_im2col():
 		self.trainable = trainable
 
 		self.XavierInit()
+		self.W=W
 
 
 		self.grad_W = np.zeros_like(self.W)
@@ -90,7 +91,15 @@ class ConvLayer_im2col():
 		k_order=self.W.ravel().reshape(self.channels,self.inputs*self.kernel_size*self.kernel_size)
 		res_A=np.matmul(k_order,A_final)
 
-		return res_A.reshape(self.batch_size,self.channels,oh,ow)#,self.W
+		h_s,w_s=res_A.strides
+		strides=    h_s,w_s*9,h_s,w_s
+		shape=(1,self.batch_size,self.channels,self.height*self.width)
+		res=np.lib.stride_tricks.as_strided(res_A, shape=shape, strides=strides)
+
+
+		return res.reshape(self.batch_size,self.channels,oh,ow)
+		# .reshape(self.batch_size,self.channels,oh,ow)
+		# .transpose(1,0,2,3)#,self.W
 
 
 	    ############################################################################
