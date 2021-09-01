@@ -1,6 +1,7 @@
 # 要添加一个新单元，输入 '# %%'
 # 要添加一个新的标记单元，输入 '# %% [markdown]'
 # %%
+from datetime import date, time
 import os
 import numpy
 
@@ -12,10 +13,17 @@ def unpickle(file):
         dict = pickle.load(fo, encoding='bytes')
     return dict
 
+def dense_to_one_hot(labels_dense, num_classes=10):
+    """Convert class labels from scalars to one-hot vectors."""
+    num_labels = labels_dense.shape[0]
+    index_offset = numpy.arange(num_labels) * num_classes
+    labels_one_hot = numpy.zeros((num_labels, num_classes))
+    labels_one_hot.flat[index_offset + labels_dense.ravel()] = 1
+    return labels_one_hot
 
 # %%
 class DataSet(object):
-    def __init__(self, images, labels, fake_data=False, one_hot=False):
+    def __init__(self, images, labels, one_hot=False, dtype=numpy.float32):
         """Construct a DataSet.
         one_hot arg is used only if fake_data is true.  `dtype` can be either
         `uint8` to leave the input as `[0, 255]`, or `float32` to rescale into
@@ -26,9 +34,9 @@ class DataSet(object):
         ), "images.shape: %s labels.shape: %s" % (len(images), len(labels))
         self._num_examples = len(images)
         # shape is [num examples, rows*columns*channels] 
-        # images = images.astype(numpy.float32)
         images = numpy.multiply(images, 1.0 / 255.0)
-
+        if one_hot == True:
+            labels=dense_to_one_hot(labels,num_classes=10)
         self._images = images
         self._labels = labels
         self._epochs_completed = 0
@@ -76,7 +84,7 @@ class DataSet(object):
 
 
 # %%
-def load_data(path):
+def load_data(path,one_hot=False):
     class DataSets(object):
         pass
     data_sets = DataSets()
@@ -101,8 +109,8 @@ def load_data(path):
     test_images=(data_dict[b'data'])
     test_labels=(data_dict[b'labels'])
     
-    data_sets.train = DataSet(train_images, train_labels)
-    data_sets.test = DataSet(test_images, test_labels)
+    data_sets.train = DataSet(numpy.array(train_images), numpy.array(train_labels), one_hot=one_hot)
+    data_sets.test = DataSet(numpy.array(test_images), numpy.array(test_labels), one_hot=one_hot)
     return data_sets
 
 
@@ -110,8 +118,12 @@ def load_data(path):
 # %%
 
 if __name__=='__main__':
+    from datetime import datetime
+    start=datetime.now()
     path='data/cifar-10-batches-py'
-    data_sets=load_data(path=path)
+    data_sets=load_data(path=path,one_hot=True)
+    print('time cost: ',datetime.now()-start)
     print('num of train items: ',data_sets.train.num_examples)
+    print('example of train label: ',data_sets.train.labels[0])
 
 
