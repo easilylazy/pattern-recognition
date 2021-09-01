@@ -25,7 +25,7 @@ device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 pngname = "convnet2fc3_dr_lr_"
 drop_out=0.3
-epochs = 50
+epochs = 10
 
 class Net(nn.Module):
     def __init__(self):
@@ -33,6 +33,9 @@ class Net(nn.Module):
         # 1 input image channel, 6 output channels, 7x7 square convolution
         # kernel
         self.conv1 = nn.Conv2d(3, 8, 3, 1, 1)
+
+        self.conv_res = nn.Conv2d(8, 8, 3, 1, 1)
+        
         self.conv2 = nn.Conv2d(8, 16, 3, 1, 1)
         # an affine operation: y = Wx + b
         self.fc1 = nn.Linear(16 * 8 * 8, 128)  # 7*7 from image dimension
@@ -43,9 +46,10 @@ class Net(nn.Module):
     def forward(self, x):
         # Max pooling over a (2, 2) window
         x = F.max_pool2d(F.relu(self.conv1(x)), (2, 2))
+        x2_1 = F.relu(self.conv_res(x))
         # If the size is a square, you can specify with a single number
-        x = self.fc_dropout(x)
-        x = F.max_pool2d(F.relu(self.conv2(x)), 2)
+        # x = self.fc_dropout(x)
+        x = F.max_pool2d(F.relu(self.conv2(x+x2_1)), 2)
         x = torch.flatten(x, 1)  # flatten all dimensions except the batch dimension
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
@@ -108,7 +112,7 @@ loss_fn = nn.MSELoss()
 # nn.CrossEntropyLoss()
 learning_rate = 0.1
 # for learning_rate in range(0.01)
-optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate)
+optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
 
 # %%
 model_load = net.to(device)
