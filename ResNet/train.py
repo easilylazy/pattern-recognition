@@ -19,6 +19,8 @@ epochs = 10
 batch_size=128
 learning_rate = 0.1
 
+max_iter = 64e3
+
 # %%
 from torch.utils.data import DataLoader
 
@@ -99,21 +101,32 @@ except:
 # %%
 def train_loop(dataloader, model, loss_fn, optimizer):
     size = len(dataloader.dataset)
+    num_batches = len(dataloader)
+
+    train_loss, correct = 0, 0
     for batch, (X, y) in enumerate(dataloader):
         # Compute prediction and loss
         X = X.reshape(X.shape[0], 3, 32, 32).to(torch.float32).to(device)
+        y = y.to(device)
+
         pred = model(X)
         loss = loss_fn(pred, y.to(device).float())
-
+        # loss = loss_fn(pred, y.to(device).long().argmax(1))
         # Backpropagation
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
+        train_loss+=loss.cpu().detach()
+        correct += (pred.cpu().detach().argmax(1) == y.cpu().argmax(1)).type(torch.float).sum().item()
+
+
         if batch % 100 == 0:
             loss, current = loss.item(), batch * len(X)
             print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
-
+    train_loss /= num_batches
+    correct /= size
+    return train_loss.numpy(), correct
 
 def test_loop(dataloader, model, loss_fn):
     size = len(dataloader.dataset)
@@ -155,21 +168,34 @@ except:
 # %%
 test_loop(test_dataloader, model_load, loss_fn)
 SAVE_CKP = False
+
+avg_train_loss, avg_train_acc = [], []
 avg_test_loss, avg_test_acc = [], []
 for t in range(epochs):
     print(f"Epoch {t+1}\n-------------------------------")
-    train_loop(train_dataloader, model_load, loss_fn, optimizer)
+    train_loss,train_acc=train_loop(train_dataloader, model_load, loss_fn, optimizer)
     test_loss, test_acc = test_loop(test_dataloader, model_load, loss_fn)
+    avg_train_loss.append(train_loss)
+    avg_train_acc.append(train_acc)
     avg_test_loss.append(test_loss)
     avg_test_acc.append(test_acc)
     filename = "checkpoint\model_w_epoch" + pngname + str(t) + ".pth"
     if SAVE_CKP:
         torch.save(model_load.state_dict(), filename)
         print("save in " + filename)
-loss,accu=test_loop(test_dataloader, model_load, loss_fn)
+loss=np.max(avg_test_loss)
+accu=np.max(avg_test_acc)
+
 from plot import plot_loss_and_acc
 
 filename = pngname+str(learning_rate)+'_epo_'+str(epochs)+'_acc_'+str(accu)+'_loss_'+str(loss)
-plot_loss_and_acc({"ConvNet": [avg_test_loss, avg_test_acc]}, filename=filename)
-
+plot_loss_and_acc({"train": [avg_train_loss, avg_train_acc],"test": [avg_test_loss, avg_test_acc]}, filename=filename)
+import pandas as pd
+foo={}
+foo['test_loss']=avg_test_loss
+foo['test_acc']=avg_test_acc
+foo['train_loss']=avg_train_loss
+foo['train_acc']=avg_train_acc
+bar=pd.DataFrame(foo)
+bar.to_csv('csv/'+filename+'.csv')
 print("Done!")
