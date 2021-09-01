@@ -13,7 +13,7 @@ mnist_dataset = input_data.load_data(path='data/cifar-10-batches-py',one_hot=Tru
 
 # %%
 # params
-pngname = "resnet_lr_"
+pngname = "resnet_layer20_lr_"
 drop_out=0.3
 epochs = 10
 batch_size=128
@@ -55,23 +55,34 @@ class Net(nn.Module):
         x1_0 = F.relu(self.conv1_0(x))
         x = F.relu(self.conv1(x1_0))
         x = F.relu(self.conv1(x))
+        x1_1=x1_0+x
+        x = F.relu(self.conv1(x1_1))
+        x = F.relu(self.conv1(x))
+        x1_2=x1_1+x
+        x = F.relu(self.conv1(x1_2))
+        x = F.relu(self.conv1(x))
 
-        x2_0=x1_0+x
+        x2_0=x1_2+x
         x = F.relu(self.conv2_0(x2_0))
         x2_1 = F.relu(self.conv2(x))
+        # dimension 32
         x = F.relu(self.conv2(x2_1))
         x = F.relu(self.conv2(x))
+        x2_2=x2_1+x
+        x = F.relu(self.conv2(x2_2))
+        x = F.relu(self.conv2(x))
 
-        x3_0=x2_1+x
+        x3_0=x2_2+x
         x = F.relu(self.conv3_0(x3_0))
+        x3_1 = F.relu(self.conv3(x))
+        # dimension 64
+        x = F.relu(self.conv3(x3_1))
+        x = F.relu(self.conv3(x))
+        x3_2=x3_1+x
+        x = F.relu(self.conv3(x3_2))
         x = F.relu(self.conv3(x))
 
-        # print(x.shape)
-
         x = self.pool(x)
-        # print(x.shape)
-        # x = F.relu(self.conv2(x))
-        # print(x.shape)
         x = torch.flatten(x, 1)  # flatten all dimensions except the batch dimension
         x = self.fc(x)
         return x
