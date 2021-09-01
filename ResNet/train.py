@@ -13,9 +13,9 @@ mnist_dataset = input_data.load_data(path='data/cifar-10-batches-py',one_hot=Tru
 
 # %%
 # params
-pngname = "resnet_layer20_lr_"
+pngname = "resnet_layer20_delr_lr_"
 drop_out=0.3
-epochs = 10
+epochs = 399
 batch_size=128
 learning_rate = 0.1
 
@@ -183,6 +183,9 @@ for t in range(epochs):
     if SAVE_CKP:
         torch.save(model_load.state_dict(), filename)
         print("save in " + filename)
+    if t==epochs//2 or t==epochs//4*3:
+        learning_rate*=0.1
+        optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate,weight_decay=0.0001,momentum=0.9)
 loss=np.max(avg_test_loss)
 accu=np.max(avg_test_acc)
 
