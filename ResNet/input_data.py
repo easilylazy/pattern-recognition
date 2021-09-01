@@ -125,5 +125,8 @@ if __name__=='__main__':
     print('time cost: ',datetime.now()-start)
     print('num of train items: ',data_sets.train.num_examples)
     print('example of train label: ',data_sets.train.labels[0])
+    X0=data_sets.train.images[0]
+    X = X0.reshape(3, 32, 32)
+    print(numpy.sum(X[1][1][:10]-X0[32*32+32:32*32+32+10]))
 
 
