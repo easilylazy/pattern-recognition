@@ -37,6 +37,11 @@ device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 class Net(nn.Module):
+    def ResUnit(self,layer,xi):
+        x = F.relu(layer(xi))
+        x = F.relu(layer(x))
+        xo=xi+x
+        return xo
     def __init__(self):
         super(Net, self).__init__()
         # 1 input image channel, 6 output channels, 7x7 square convolution
@@ -47,42 +52,32 @@ class Net(nn.Module):
         self.conv2 = nn.Conv2d(32, 32, 3, 1, 1)
         self.conv3_0 = nn.Conv2d(32, 64, 3, 2, 1)
         self.conv3 = nn.Conv2d(64, 64, 3, 1, 1)
-
         self.pool=nn.AdaptiveAvgPool2d((1,1))
+        self.bn16=nn.BatchNorm2d(16)
+        self.bn32=nn.BatchNorm2d(32)
+        self.bn64=nn.BatchNorm2d(64)
         self.fc = nn.Linear(64,10)  
         self.fc_dropout = nn.Dropout(drop_out) 
 
     def forward(self, x):
-        # Max pooling over a (2, 2) window
-        x1_0 = F.relu(self.conv1_0(x))
-        x = F.relu(self.conv1(x1_0))
-        x = F.relu(self.conv1(x))
-        x1_1=x1_0+x
-        x = F.relu(self.conv1(x1_1))
-        x = F.relu(self.conv1(x))
-        x1_2=x1_1+x
-        x = F.relu(self.conv1(x1_2))
-        x = F.relu(self.conv1(x))
+        # dimension 16
+        x1_0 = F.relu(self.bn16(self.conv1_0(x)))
+        x = self.ResUnit(self.conv1,x1_0)
+        x = self.ResUnit(self.conv1,x)
+        x = self.ResUnit(self.conv1,x)
 
-        x2_0=x1_2+x
-        x = F.relu(self.conv2_0(x2_0))
-        x2_1 = F.relu(self.conv2(x))
+        # x2_0=x1_2+x
+        x = F.relu(self.conv2_0(x))
         # dimension 32
-        x = F.relu(self.conv2(x2_1))
         x = F.relu(self.conv2(x))
-        x2_2=x2_1+x
-        x = F.relu(self.conv2(x2_2))
-        x = F.relu(self.conv2(x))
+        x = self.ResUnit(self.conv2,x)
+        x = self.ResUnit(self.conv2,x)
 
-        x3_0=x2_2+x
-        x = F.relu(self.conv3_0(x3_0))
-        x3_1 = F.relu(self.conv3(x))
+        x = F.relu(self.conv3_0(x))
         # dimension 64
-        x = F.relu(self.conv3(x3_1))
         x = F.relu(self.conv3(x))
-        x3_2=x3_1+x
-        x = F.relu(self.conv3(x3_2))
-        x = F.relu(self.conv3(x))
+        x = self.ResUnit(self.conv3,x)
+        x = self.ResUnit(self.conv3,x)
 
         x = self.pool(x)
         x = torch.flatten(x, 1)  # flatten all dimensions except the batch dimension
