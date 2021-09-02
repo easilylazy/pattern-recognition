@@ -34,58 +34,10 @@ import torch.nn.functional as F
 
 device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+from net import ResNet
 
 
-class Net(nn.Module):
-    def ResUnit(self,layer,xi):
-        x = F.relu(layer(xi))
-        x = F.relu(layer(x))
-        xo=xi+x
-        return xo
-    def __init__(self):
-        super(Net, self).__init__()
-        # 1 input image channel, 6 output channels, 7x7 square convolution
-        # kernel
-        self.conv1_0 = nn.Conv2d(3, 16, 3, 1, 1)
-        self.conv1 = nn.Conv2d(16, 16, 3, 1, 1)
-        self.conv2_0 = nn.Conv2d(16, 32, 3, 2, 1)
-        self.conv2 = nn.Conv2d(32, 32, 3, 1, 1)
-        self.conv3_0 = nn.Conv2d(32, 64, 3, 2, 1)
-        self.conv3 = nn.Conv2d(64, 64, 3, 1, 1)
-        self.pool=nn.AdaptiveAvgPool2d((1,1))
-        self.bn16=nn.BatchNorm2d(16)
-        self.bn32=nn.BatchNorm2d(32)
-        self.bn64=nn.BatchNorm2d(64)
-        self.fc = nn.Linear(64,10)  
-        self.fc_dropout = nn.Dropout(drop_out) 
-
-    def forward(self, x):
-        # dimension 16
-        x1_0 = F.relu(self.bn16(self.conv1_0(x)))
-        x = self.ResUnit(self.conv1,x1_0)
-        x = self.ResUnit(self.conv1,x)
-        x = self.ResUnit(self.conv1,x)
-
-        # x2_0=x1_2+x
-        x = F.relu(self.conv2_0(x))
-        # dimension 32
-        x = F.relu(self.conv2(x))
-        x = self.ResUnit(self.conv2,x)
-        x = self.ResUnit(self.conv2,x)
-
-        x = F.relu(self.conv3_0(x))
-        # dimension 64
-        x = F.relu(self.conv3(x))
-        x = self.ResUnit(self.conv3,x)
-        x = self.ResUnit(self.conv3,x)
-
-        x = self.pool(x)
-        x = torch.flatten(x, 1)  # flatten all dimensions except the batch dimension
-        x = self.fc(x)
-        return x
-
-
-net = Net().to(device)
+net = ResNet().to(device)
 try:
     torch.cuda.empty_cache()  # PyTorch thing
     print("success clean")

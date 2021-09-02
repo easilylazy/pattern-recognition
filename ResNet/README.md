@@ -40,6 +40,9 @@ We use a weight decay of 0.0001 and momentum of 0.9, and adopt the weight initia
 
 ## 记录
 
-9.1 实现最少层，学习率衰减
+9.1 实现最少层，学习率衰减 acc：0.8042
 TODO: 多GPU训练
 在尝试多GPU训练时，有报错情况，暂时没有头绪
+9.2 - 单元化
+    - 增加BN：We adopt batch normalization  (BN)  [16]  right  after  each  convolution  and before activation
+TODO: 数据增强：We follow the simple data augmen- tation in [24] for training: 4 pixels are padded on each side, and  a  32×32  crop  is  randomly  sampled  from  the  padded image or its horizontal flip. 
