@@ -3,6 +3,7 @@
 # %%
 from pickle import FALSE
 import input_data
+from input_data import DataSet
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -53,7 +54,7 @@ def train_loop(dataloader, model, loss_fn, optimizer):
     train_loss, correct = 0, 0
     for batch, (X, y) in enumerate(dataloader):
         # Compute prediction and loss
-        X = X.reshape(X.shape[0], 3, 32, 32).to(torch.float32).to(device)
+        X = X.to(torch.float32).to(device)
         y = y.to(device)
 
         pred = model(X)
@@ -82,7 +83,7 @@ def test_loop(dataloader, model, loss_fn):
 
     with torch.no_grad():
         for X, y in dataloader:
-            X = X.reshape(X.shape[0], 3, 32, 32).to(torch.float32).to(device)
+            X = X.to(torch.float32).to(device)
             y = y.to(device)
             pred = model(X)
             test_loss += loss_fn(pred, y.float()).item()
