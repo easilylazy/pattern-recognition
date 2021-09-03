@@ -55,3 +55,17 @@ TODO: ~~多GPU训练~~
   - 完成重复层修改，通过`nn.moduleList`   
 TODO: ~~参数初始化方式 ~~
     > 实际上，Kaiming初始化已经被Pytorch用作默认的参数初始化函数 acc: 0.8333
+    - 当损失函数使用`nn.CrossEntropy`时，模型不需要softmax，因为已经包括（原因在于，测试时不需要进行该步骤，减少
+TODO: 维度变换时连接层的改变
+
+### 优化过程
+
+在网络基本实现了ResNet的各个feature后，测试结果在ResNet中最高只有0.8601，距离论文中记录的错误率8.75%仍有很大差距。下面是改善优化的探索过程：
+
+> 李苏李苏​回复被猹反杀的闰土哥2019-05-07
+我一开始和你差不多。我一开始输入图片范围是0-1，后来换成0-255就好了，我在0.1学习率下训练了20w个iter，差不多测试精度能到0.91左右，这时候再降低学习率差不多最终能复现原论文     [zhihu](https://www.zhihu.com/question/31288376)
+
+因为我的测试结果表现是，BN有益，而数据增强无益有损。
+那么数据的标准化是有影响的，我回过头来审视自己的数据增强部分，是借鉴的别人的配置，至于均值mean与标准差std我一概不管，结果一搜这个数值，是imagenet的值。而cifar-10的数值是
+> Correct normalization values for CIFAR-10: (0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261)        
+   [https://github.com/kuangliu/pytorch-cifar/issues/19](https://github.com/kuangliu/pytorch-cifar/issues/19)

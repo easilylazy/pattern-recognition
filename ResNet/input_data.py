@@ -53,8 +53,7 @@ class DataSet(object):
                 trans = [transforms.RandomHorizontalFlip(),
                         transforms.RandomCrop(32, padding=4),
                         transforms.ToTensor(),
-                        transforms.Normalize(mean=[n/255.
-                            for n in [129.3, 124.1, 112.4]], std=[n/255. for n in [68.2,  65.4,  70.4]])]
+                        transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.247, 0.243, 0.261])]
                 trans = transforms.Compose(trans)
                 x=X_trans[i]
                 PIL_image = Image.fromarray(x) 
@@ -62,8 +61,7 @@ class DataSet(object):
         else:
             for i in range(self._num_examples):
                 trans = [transforms.ToTensor(),
-                        transforms.Normalize(mean=[n/255.
-                            for n in [129.3, 124.1, 112.4]], std=[n/255. for n in [68.2,  65.4,  70.4]])]
+                        transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.247, 0.243, 0.261])]
                 trans = transforms.Compose(trans)
                 x=X_trans[i]
                 PIL_image = Image.fromarray(x) 
@@ -118,12 +116,16 @@ class DataSet(object):
 
 
 # %%
-def load_data(path,one_hot=False):
+def load_data(path,one_hot=False,augment=True):
     data_sets = DataSets()
 
     try:
-        data_sets.train = unpickle(os.path.join(path,'train'))
-        data_sets.test = unpickle(os.path.join(path,'test'))
+        if augment:
+            data_sets.train = unpickle(os.path.join(path,'train'))
+            data_sets.test = unpickle(os.path.join(path,'test'))
+        else:
+            data_sets.train = unpickle(os.path.join(path,'train_ori'))
+            data_sets.test = unpickle(os.path.join(path,'test_ori'))
     except:
         print('load raw data...')
 
@@ -148,11 +150,17 @@ def load_data(path,one_hot=False):
         data_dict=unpickle(os.path.join(path,batch_file))
         test_images=(data_dict[b'data'])
         test_labels=(data_dict[b'labels'])
-        
-        data_sets.train = DataSet(numpy.array(train_images), numpy.array(train_labels), type='train', one_hot=one_hot)
-        pickle(data_sets.train,os.path.join(path,'train'))
-        data_sets.test = DataSet(numpy.array(test_images), numpy.array(test_labels), type='test', one_hot=one_hot)
-        pickle(data_sets.test,os.path.join(path,'test'))
+        if augment:
+            data_sets.train = DataSet(numpy.array(train_images), numpy.array(train_labels), type='train', one_hot=one_hot)
+            pickle(data_sets.train,os.path.join(path,'train'))
+            data_sets.test = DataSet(numpy.array(test_images), numpy.array(test_labels), type='test', one_hot=one_hot)
+            pickle(data_sets.test,os.path.join(path,'test'))
+
+        else:
+            data_sets.train = DataSet(numpy.array(train_images), numpy.array(train_labels), type='train_ori', one_hot=one_hot)
+            pickle(data_sets.train,os.path.join(path,'train_ori'))
+            data_sets.test = DataSet(numpy.array(test_images), numpy.array(test_labels), type='test_ori', one_hot=one_hot)
+            pickle(data_sets.test,os.path.join(path,'test_ori'))
 
     return data_sets
 
