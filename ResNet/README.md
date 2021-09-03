@@ -42,8 +42,8 @@ We use a weight decay of 0.0001 and momentum of 0.9, and adopt the weight initia
 
 - 9.1 
   - 实现最少层，学习率衰减 acc：0.8042      
-<!-- TODO: 多GPU训练
-在尝试多GPU训练时，有报错情况，暂时没有头绪 -->
+TODO: ~~多GPU训练~~   
+在尝试多GPU训练时，有报错情况，暂时没有头绪
 - 9.2 
     - 单元化
     - 增加BN：We adopt batch normalization  (BN)  [16]  right  after  each  convolution  and before activation
@@ -53,4 +53,5 @@ We use a weight decay of 0.0001 and momentum of 0.9, and adopt the weight initia
 - 9.3
   - 发现重大问题：重复层的使用——虽然层的参数相同，**但在forward中使用重复层不会有效**
   - 完成重复层修改，通过`nn.moduleList`   
-TODO: 参数初始化方式
+TODO: ~~参数初始化方式 ~~
+    > 实际上，Kaiming初始化已经被Pytorch用作默认的参数初始化函数 acc: 0.8333

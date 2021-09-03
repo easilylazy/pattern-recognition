@@ -110,8 +110,9 @@ class DimUnit_BN(nn.Module):
         x = F.relu(self.bn2(self.conv2(x)))
         return x
 class ResNet_BN(nn.Module):
-    def __init__(self):
+    def __init__(self,unit_num=2):
         super(ResNet_BN, self).__init__()
+        self.unit_num=unit_num
         # 1 input image channel, 6 output channels, 7x7 square convolution
         # kernel
         self.conv1_0 = nn.Conv2d(3, 16, 3, 1, 1)
@@ -120,7 +121,7 @@ class ResNet_BN(nn.Module):
         self.resunits=nn.ModuleList()
         channelsList=[16,32,64]
         for channels in channelsList:
-            for i in range(unit_num):
+            for i in range(self.unit_num):
                 resunit=ResUnit_BN(channels)
                 self.resunits.append(resunit)
         self.DimUnit_BN2=DimUnit_BN(16,32)
@@ -134,19 +135,19 @@ class ResNet_BN(nn.Module):
         # dimension 16
         x = F.relu(self.bn1(self.conv1_0(x)))
         x = self.res1(x)
-        for i in range(unit_num):
+        for i in range(self.unit_num):
             x = self.resunits[i](x)
 
         # # dimension 32
         x = self.DimUnit_BN2(x)
 
-        for i in range(unit_num):
-            x = self.resunits[unit_num+i](x)
+        for i in range(self.unit_num):
+            x = self.resunits[self.unit_num+i](x)
 
         # # dimension 64
         x = self.DimUnit_BN3(x)
-        for i in range(unit_num):
-            x = self.resunits[unit_num*2+i](x)
+        for i in range(self.unit_num):
+            x = self.resunits[self.unit_num*2+i](x)
 
         x = self.pool(x)
         x = torch.flatten(x, 1)  # flatten all dimensions except the batch dimension
