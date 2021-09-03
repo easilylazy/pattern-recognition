@@ -6,33 +6,63 @@ from input_data import DataSets
 import input_data
 import matplotlib.pyplot as plt
 import numpy as np
-from net import ResNet as ResNet
+from net import ResNet_BN as ResNet
+import torchvision
+from torchvision import transforms
+import torch
 
 
 # %%
-mnist_dataset = input_data.load_data(path='data/cifar-10-batches-py',one_hot=True)
+mnist_dataset = input_data.load_data(path='data/cifar-10-batches-py',one_hot=True,augment=True)
 
 
 # %%
 # params
-pngname = "dp_cross_unit_layer20_delr_lr_"
-drop_out=0.3
-batch_size=256
+batch_size=128
 learning_rate = 0.1
-
+unit_num=2
 max_iter = 64e3
 epochs = int(max_iter//(50000//batch_size))
-print('epochs: ',epochs)
+pngname = "dp_otherdata_bn_cross_unit_layer"+str(6*(unit_num+1)+2)+"_delr_lr_"+str(learning_rate)+'_epo_'+str(epochs)+'_batch_'+str(batch_size)
+print(pngname)
 
 # %%
 from torch.utils.data import DataLoader
 
-train_dataloader = DataLoader(mnist_dataset.train, batch_size=batch_size, shuffle=True)
-test_dataloader = DataLoader(mnist_dataset.test, batch_size=batch_size, shuffle=True)
+# train_dataloader = DataLoader(mnist_dataset.train, batch_size=batch_size, shuffle=True)
+# test_dataloader = DataLoader(mnist_dataset.test, batch_size=batch_size, shuffle=True)
+
+# Data
+print('==> Preparing data..')
+transform_train = transforms.Compose([
+    transforms.RandomCrop(32, padding=4),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+])
+
+transform_test = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+])
+
+trainset = torchvision.datasets.CIFAR10(
+    root='./data', train=True, download=True, transform=transform_train)
+train_dataloader = torch.utils.data.DataLoader(
+    trainset, batch_size=128, shuffle=True, num_workers=2)
+
+testset = torchvision.datasets.CIFAR10(
+    root='./data', train=False, download=True, transform=transform_test)
+test_dataloader = torch.utils.data.DataLoader(
+    testset, batch_size=100, shuffle=False, num_workers=2)
 import os
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "5,6"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "2,3,4,5,6,7"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "6,7"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "2,3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "4,5"
 
 # %%
 import torch
@@ -46,7 +76,7 @@ device_ids = [0, 1]
 device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-net = ResNet().to(device)
+net = ResNet(unit_num=unit_num).to(device)
 try:
     torch.cuda.empty_cache()  # PyTorch thing
     print("success clean")
@@ -68,14 +98,14 @@ def train_loop(dataloader, model, loss_fn, optimizer):
 
         pred = model(X)
         # loss = loss_fn(pred, y.to(device))
-        loss = loss_fn(pred, y.to(device).long().argmax(1))
+        loss = loss_fn(pred, y)
         # Backpropagation
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
         train_loss+=loss.cpu().detach()
-        correct += (pred.cpu().detach().argmax(1) == y.cpu().argmax(1)).type(torch.float).sum().item()
+        correct += (pred.cpu().detach().argmax(1) == y.cpu()).type(torch.float).sum().item()
 
 
         if batch % 100 == 0:
@@ -96,8 +126,8 @@ def test_loop(dataloader, model, loss_fn):
             X = X.reshape(X.shape[0], 3, 32, 32).to(device)
             y = y.to(device)
             pred = model(X)
-            test_loss += loss_fn(pred, y.long().argmax(1)).item()
-            correct += (pred.argmax(1) == y.argmax(1)).type(torch.float).sum().item()
+            test_loss += loss_fn(pred, y).item()
+            correct += (pred.argmax(1) == y).type(torch.float).sum().item()
 
     test_loss /= num_batches
     correct /= size
@@ -151,7 +181,7 @@ accu=np.max(avg_test_acc)
 
 from plot import plot_loss_and_acc
 
-filename = pngname+str(learning_rate)+'_epo_'+str(epochs)+'_batch_'+str(batch_size)+'_acc_'+str(accu)+'_loss_'+str(loss)
+filename = pngname+'_acc_'+str(accu)+'_loss_'+str(loss)
 plot_loss_and_acc({"train": [avg_train_loss, avg_train_acc],"test": [avg_test_loss, avg_test_acc]}, filename=filename)
 import pandas as pd
 foo={}

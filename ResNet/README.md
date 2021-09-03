@@ -69,3 +69,5 @@ TODO: 维度变换时连接层的改变
 那么数据的标准化是有影响的，我回过头来审视自己的数据增强部分，是借鉴的别人的配置，至于均值mean与标准差std我一概不管，结果一搜这个数值，是imagenet的值。而cifar-10的数值是
 > Correct normalization values for CIFAR-10: (0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261)        
    [https://github.com/kuangliu/pytorch-cifar/issues/19](https://github.com/kuangliu/pytorch-cifar/issues/19)
+
+并没有提升，无奈只能进行对比测试，利用`torchvision`的方法导入数据，进行训练，结果改进很大（acc: 0.8850)，因此数据集的处理对训练也有较大影响
