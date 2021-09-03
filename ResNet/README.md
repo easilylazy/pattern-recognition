@@ -50,3 +50,5 @@ TODO: 多GPU训练
     - 数据增强：We follow the simple data augmen- tation in [24] for training: 4 pixels are padded on each side, and  a  32×32  crop  is  randomly  sampled  from  the  padded image or its horizontal flip. 
     - 完成多GPU训练，使用DataParallel
     - 将损失函数进行修改-虽然使用了上述trick，但准确率并没有明显提升
+- 9.3
+  - 发现重大问题：重复层的使用——虽然层的参数相同，**但在forward中使用重复层不会有效**
