@@ -56,7 +56,9 @@ TODO: ~~多GPU训练~~
 TODO: ~~参数初始化方式 ~~
     > 实际上，Kaiming初始化已经被Pytorch用作默认的参数初始化函数 acc: 0.8333
     - 当损失函数使用`nn.CrossEntropy`时，模型不需要softmax，因为已经包括（原因在于，测试时不需要进行该步骤，减少
-TODO: 维度变换时连接层的改变
+TODO: ~~维度变换时连接层的改变~~
+- 9.5 
+  - 完成在维度变换时的短连接[option A]，通过`nn.ConstantPad3d`实现通道的补零，通过切片索引完成间隔取值
 
 ### 优化过程
 
@@ -70,4 +72,4 @@ TODO: 维度变换时连接层的改变
 > Correct normalization values for CIFAR-10: (0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261)        
    [https://github.com/kuangliu/pytorch-cifar/issues/19](https://github.com/kuangliu/pytorch-cifar/issues/19)
 
-并没有提升，无奈只能进行对比测试，利用`torchvision`的方法导入数据，进行训练，结果改进很大（acc: 0.8850)，因此数据集的处理对训练也有较大影响
+并没有提升，无奈只能进行对比测试，利用`torchvision`的方法导入数据，进行训练，结果改进很大（acc: 0.8872)，因此数据集的处理对训练也有较大影响。此时，再将上述数值修改，正确率有所提升（acc: 0.8905）

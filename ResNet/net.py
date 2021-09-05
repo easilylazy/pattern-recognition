@@ -96,7 +96,7 @@ class DimUnit_BN(nn.Module):
     '''
     dimension change
     '''
-    def __init__(self,in_channels, out_channels,stride=2):
+    def __init__(self,in_channels, out_channels,stride=2,diff=8):
         super(DimUnit_BN,self).__init__()
         self.convList=nn.ModuleList()
         self.bnList=nn.ModuleList()
@@ -104,11 +104,14 @@ class DimUnit_BN(nn.Module):
         self.conv2 = nn.Conv2d(out_channels, out_channels, 3, 1, 1)
         self.bn1=nn.BatchNorm2d(out_channels)
         self.bn2=nn.BatchNorm2d(out_channels)
+        self.pad=nn.ConstantPad3d((0,0,0,0,0,out_channels-in_channels),0)
+        
 
-    def forward(self,x):
-        x = F.relu(self.bn1(self.conv1(x)))
+    def forward(self,xi):
+        x = F.relu(self.bn1(self.conv1(xi)))
         x = F.relu(self.bn2(self.conv2(x)))
-        return x
+        xo=self.pad(xi[:,:,::2,::2])+x
+        return xo
 class ResNet_BN(nn.Module):
     def __init__(self,unit_num=2):
         super(ResNet_BN, self).__init__()
