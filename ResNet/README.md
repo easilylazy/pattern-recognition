@@ -37,9 +37,9 @@ not use dropout
 
  Then we use a stack of 6n layers wi
 
-这个n的含义
+这个n的含义是指，共有`3`组（维度分别为16，64，32），以`2`层为一个单元（需要注意的地方，因为如果只有1层，short cut相当于增加的是权重，没有起到应有的作用）
 
-We use a weight decay of 0.0001 and momentum of 0.9, and adopt the weight initialization in [13] and BN [16] but with  no  dropout.   These  models  are  trained  with  a  mini- batch size of 128 on two GPUs.  We start with a learning rate of 0.1,  divide it by 10 at 32k and 48k iterations,  and terminate training at 64k iterations, which is determined on a 45k/5k train/val split. We follow the simple data augmen- tation in [24] for training: 4 pixels are padded on each side, and  a  32×32  crop  is  randomly  sampled  from  the  padded image or its horizontal flip.  For testing, we only evaluate the single view of the original 32×32 image.
+> We use a weight decay of 0.0001 and momentum of 0.9, and adopt the weight initialization in [13] and BN [16] but with  no  dropout.   These  models  are  trained  with  a  mini- batch size of 128 on two GPUs.  We start with a learning rate of 0.1,  divide it by 10 at 32k and 48k iterations,  and terminate training at 64k iterations, which is determined on a 45k/5k train/val split. We follow the simple data augmen- tation in [24] for training: 4 pixels are padded on each side, and  a  32×32  crop  is  randomly  sampled  from  the  padded image or its horizontal flip.  For testing, we only evaluate the single view of the original 32×32 image.
 
 ## 记录
 
@@ -62,7 +62,7 @@ TODO: ~~参数初始化方式~~
 TODO: ~~维度变换时连接层的改变~~
 - 9.5 
   - 完成在维度变换时的短连接[option A]，通过`nn.ConstantPad3d`实现通道的补零，通过切片索引完成间隔取值: 但准确率下降，原因可能是增加了无用数据支路（acc: 0.8766）
-  - 使用[option B]实现，通过一层卷积实现数据
+  - 使用[option B]实现，通过一层卷积实现数据（acc: 0.8979）
 
 ### 优化过程
 
