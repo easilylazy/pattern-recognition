@@ -96,21 +96,31 @@ class DimUnit_BN(nn.Module):
     '''
     dimension change
     '''
-    def __init__(self,in_channels, out_channels,stride=2,diff=8):
+    def __init__(self,in_channels, out_channels,stride=2,diff=8,option='A'):
         super(DimUnit_BN,self).__init__()
+        self.option=option
         self.convList=nn.ModuleList()
         self.bnList=nn.ModuleList()
         self.conv1 = nn.Conv2d(in_channels, out_channels, 3, stride, 1)
+        self.conv1_2 = nn.Conv2d(in_channels, out_channels, 3, stride, 1)
         self.conv2 = nn.Conv2d(out_channels, out_channels, 3, 1, 1)
         self.bn1=nn.BatchNorm2d(out_channels)
+        self.bn1_2=nn.BatchNorm2d(out_channels)
         self.bn2=nn.BatchNorm2d(out_channels)
         self.pad=nn.ConstantPad3d((0,0,0,0,0,out_channels-in_channels),0)
         
 
     def forward(self,xi):
+        
         x = F.relu(self.bn1(self.conv1(xi)))
         x = F.relu(self.bn2(self.conv2(x)))
-        xo=self.pad(xi[:,:,::2,::2])+x
+        if self.option=='A':
+            xo=self.pad(xi[:,:,::2,::2])+x
+        elif self.option=='B':
+            x1_2=self.bn1_2(self.conv1_2(xi))
+            xo=x1_2+x
+        else:
+            xo=x
         return xo
 class ResNet_BN(nn.Module):
     def __init__(self,unit_num=2):
@@ -203,6 +213,86 @@ class Net(nn.Module):
         x3_2=x3_1+x
         x = F.relu(self.conv3(x3_2))
         x = F.relu(self.conv3(x))
+
+        x = self.pool(x)
+        x = torch.flatten(x, 1)  # flatten all dimensions except the batch dimension
+        x = self.fc(x)
+        return x
+class ResUnit_BN_plain(nn.Module):
+    def __init__(self,channels,layers=2):
+        super(ResUnit_BN_plain,self).__init__()
+        self.layers=layers
+        self.convList=nn.ModuleList()
+        self.bnList=nn.ModuleList()
+        for i in range(layers):
+            conv = nn.Conv2d(channels, channels, 3, 1, 1)
+            self.convList.append(conv)
+            bn=nn.BatchNorm2d(channels)
+            self.bnList.append(bn)
+
+
+    def forward(self,xi):
+        x = F.relu(self.bnList[0](self.convList[0](xi)))
+        x = F.relu(self.bnList[1](self.convList[1](x)))
+        return x
+class DimUnit_BN_plain(nn.Module):
+    '''
+    dimension change
+    '''
+    def __init__(self,in_channels, out_channels,stride=2,diff=8):
+        super(DimUnit_BN_plain,self).__init__()
+        self.convList=nn.ModuleList()
+        self.bnList=nn.ModuleList()
+        self.conv1 = nn.Conv2d(in_channels, out_channels, 3, stride, 1)
+        self.conv2 = nn.Conv2d(out_channels, out_channels, 3, 1, 1)
+        self.bn1=nn.BatchNorm2d(out_channels)
+        self.bn2=nn.BatchNorm2d(out_channels)
+        self.pad=nn.ConstantPad3d((0,0,0,0,0,out_channels-in_channels),0)
+        
+
+    def forward(self,xi):
+        x = F.relu(self.bn1(self.conv1(xi)))
+        x = F.relu(self.bn2(self.conv2(x)))
+        return x
+class ResNet_BN_plain(nn.Module):
+    def __init__(self,unit_num=2):
+        super(ResNet_BN_plain, self).__init__()
+        self.unit_num=unit_num
+        # 1 input image channel, 6 output channels, 7x7 square convolution
+        # kernel
+        self.conv1_0 = nn.Conv2d(3, 16, 3, 1, 1)
+        self.res1=ResUnit_BN(16)
+
+        self.resunits=nn.ModuleList()
+        channelsList=[16,32,64]
+        for channels in channelsList:
+            for i in range(self.unit_num):
+                resunit=ResUnit_BN(channels)
+                self.resunits.append(resunit)
+        self.DimUnit_BN2=DimUnit_BN(16,32)
+        self.DimUnit_BN3=DimUnit_BN(32,64)
+
+        self.pool=nn.AdaptiveAvgPool2d((1,1))
+        self.bn1=nn.BatchNorm2d(16)
+        self.fc = nn.Linear(64,10)  
+
+    def forward(self, x):
+        # dimension 16
+        x = F.relu(self.bn1(self.conv1_0(x)))
+        x = self.res1(x)
+        for i in range(self.unit_num):
+            x = self.resunits[i](x)
+
+        # # dimension 32
+        x = self.DimUnit_BN2(x)
+
+        for i in range(self.unit_num):
+            x = self.resunits[self.unit_num+i](x)
+
+        # # dimension 64
+        x = self.DimUnit_BN3(x)
+        for i in range(self.unit_num):
+            x = self.resunits[self.unit_num*2+i](x)
 
         x = self.pool(x)
         x = torch.flatten(x, 1)  # flatten all dimensions except the batch dimension

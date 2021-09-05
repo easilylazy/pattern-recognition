@@ -1,3 +1,6 @@
+# ResNet
+pytorch实现    
+ref: Deep Residual Learning for Image Recognition
 
 ## 使用
 
@@ -53,12 +56,13 @@ TODO: ~~多GPU训练~~
 - 9.3
   - 发现重大问题：重复层的使用——虽然层的参数相同，**但在forward中使用重复层不会有效**
   - 完成重复层修改，通过`nn.moduleList`   
-TODO: ~~参数初始化方式 ~~
+TODO: ~~参数初始化方式~~
     > 实际上，Kaiming初始化已经被Pytorch用作默认的参数初始化函数 acc: 0.8333
     - 当损失函数使用`nn.CrossEntropy`时，模型不需要softmax，因为已经包括（原因在于，测试时不需要进行该步骤，减少
 TODO: ~~维度变换时连接层的改变~~
 - 9.5 
-  - 完成在维度变换时的短连接[option A]，通过`nn.ConstantPad3d`实现通道的补零，通过切片索引完成间隔取值
+  - 完成在维度变换时的短连接[option A]，通过`nn.ConstantPad3d`实现通道的补零，通过切片索引完成间隔取值: 但准确率下降，原因可能是增加了无用数据支路（acc: 0.8766）
+  - 使用[option B]实现，通过一层卷积实现数据
 
 ### 优化过程
 
@@ -73,3 +77,36 @@ TODO: ~~维度变换时连接层的改变~~
    [https://github.com/kuangliu/pytorch-cifar/issues/19](https://github.com/kuangliu/pytorch-cifar/issues/19)
 
 并没有提升，无奈只能进行对比测试，利用`torchvision`的方法导入数据，进行训练，结果改进很大（acc: 0.8872)，因此数据集的处理对训练也有较大影响。此时，再将上述数值修改，正确率有所提升（acc: 0.8905）
+
+
+## 结果分析
+
+### 数据处理
+
+![data](img/data_com__acc.png)
+
+从图中可以看出，原始的数据导入方法的训练准确率在前期要明显高于（后期渐渐接近）通过库函数导入，但库函数导入的测试准确率却更高一些。而测试集的差距正是在前期显著，后期基本保持相对水平。
+
+TODO: 比较库函数的数据读取有何差异
+
+### 多GPU训练
+![gpu](img/gpu_com__acc.png)
+当使用`DataParallel`进行多GPU训练时，因为对论文中的mini batch有疑问（trained  with  a  mini- batch size of 128 on two GPUs），到底是batch的size就是128，还是每个GPU上各128呢？因为`DataParallel`的实现是将一批数据均分到指定的GPU上，因此这个参数很模糊。
+
+为了测试性能，我分别选择2个GPU和6个GPU进行训练，二者的各参数几乎一致，因此GPU的数量没有决定性影响。而改变batch的数量，我们可以发现，batch-128的测试率要高于batch-256，因此在之后的测试中，我们以batch设定为128为主
+
+同时，再次注意到，训练集的正确率在前期存在差异。也许是一个共同原因的现象，需要在之后进行探究。
+
+
+
+### short cut
+![unit](img/unit_com__acc.png)
+
+使用方法A（填充补0）比不连接效果还差，而方法B的效果更好一些，注意到其他人的实现在输出数据也使用了`relu`，效果达到目前最好，（acc: 0.905）这是在层数为56的情况下
+
+而在20层进行实验，结果也是同层数最佳（acc: 0.8979）
+
+### 层数
+
+上面栏目可以部分支持，但仍需要更多的实验数据（TODO）
+
