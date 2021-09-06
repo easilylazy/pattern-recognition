@@ -91,12 +91,13 @@ class ResUnit_BN(nn.Module):
         x = F.relu(self.bnList[0](self.convList[0](xi)))
         x = F.relu(self.bnList[1](self.convList[1](x)))
         xo=xi+x
+        xo=F.relu(xo)
         return xo
 class DimUnit_BN(nn.Module):
     '''
     dimension change
     '''
-    def __init__(self,in_channels, out_channels,stride=2,diff=8,option='A'):
+    def __init__(self,in_channels, out_channels,stride=2,diff=8,option='B'):
         super(DimUnit_BN,self).__init__()
         self.option=option
         self.convList=nn.ModuleList()
@@ -121,6 +122,7 @@ class DimUnit_BN(nn.Module):
             xo=x1_2+x
         else:
             xo=x
+        xo=F.relu(xo)
         return xo
 class ResNet_BN(nn.Module):
     def __init__(self,unit_num=2):
@@ -234,6 +236,7 @@ class ResUnit_BN_plain(nn.Module):
     def forward(self,xi):
         x = F.relu(self.bnList[0](self.convList[0](xi)))
         x = F.relu(self.bnList[1](self.convList[1](x)))
+        x = F.relu(x)
         return x
 class DimUnit_BN_plain(nn.Module):
     '''
@@ -253,6 +256,7 @@ class DimUnit_BN_plain(nn.Module):
     def forward(self,xi):
         x = F.relu(self.bn1(self.conv1(xi)))
         x = F.relu(self.bn2(self.conv2(x)))
+        x = F.relu(x)
         return x
 class ResNet_BN_plain(nn.Module):
     def __init__(self,unit_num=2):
@@ -261,16 +265,16 @@ class ResNet_BN_plain(nn.Module):
         # 1 input image channel, 6 output channels, 7x7 square convolution
         # kernel
         self.conv1_0 = nn.Conv2d(3, 16, 3, 1, 1)
-        self.res1=ResUnit_BN(16)
+        self.res1=ResUnit_BN_plain(16)
 
         self.resunits=nn.ModuleList()
         channelsList=[16,32,64]
         for channels in channelsList:
             for i in range(self.unit_num):
-                resunit=ResUnit_BN(channels)
+                resunit=ResUnit_BN_plain(channels)
                 self.resunits.append(resunit)
-        self.DimUnit_BN2=DimUnit_BN(16,32)
-        self.DimUnit_BN3=DimUnit_BN(32,64)
+        self.DimUnit_BN2=DimUnit_BN_plain(16,32)
+        self.DimUnit_BN3=DimUnit_BN_plain(32,64)
 
         self.pool=nn.AdaptiveAvgPool2d((1,1))
         self.bn1=nn.BatchNorm2d(16)
