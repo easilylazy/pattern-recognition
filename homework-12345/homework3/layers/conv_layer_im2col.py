@@ -14,7 +14,22 @@ def split_by_strides(X, kh, kw, s):
     strides = (X.strides[0], X.strides[1]*s, X.strides[2]*s, *X.strides[1:])
     A = np.lib.stride_tricks.as_strided(X, shape=shape, strides=strides)
     return A
-class ConvLayer():
+
+def im2col(X_pad,kh,kw,s=1):
+		N, C, H, W = X_pad.shape
+
+		oh = (H - kh) // s + 1
+		ow = (W - kw) // s + 1
+		shape = (N, C, oh, ow, kh, kw)
+		strides = (X_pad.strides[0], X_pad.strides[1],X_pad.strides[2], X_pad.strides[3]*s,X_pad.strides[2],X_pad.strides[3])
+		#  X_pad.strides[2]*s, *X.strides[1:])
+		A = np.lib.stride_tricks.as_strided(X_pad, shape=shape, strides=strides)
+		X_pad.strides
+		A_order=A.ravel().reshape(N,C, oh*ow,kh*kw)
+		foo1=np.concatenate([i for i in A_order],axis=2)
+		A_final=np.concatenate([i for i in foo1],axis=0)
+		return A_final
+class ConvLayer_im2col():
 	"""
 	2D convolutional layer.
 	This layer creates a convolution kernel that is convolved with the layer
@@ -29,7 +44,7 @@ class ConvLayer():
 	def __init__(self, inputs,
 	             filters,
 	             kernel_size,
-	             pad,
+	             pad,W,
 	             trainable=True):
 		self.inputs = inputs
 		self.filters = filters
@@ -39,6 +54,7 @@ class ConvLayer():
 		self.trainable = trainable
 
 		self.XavierInit()
+		self.W=W
 
 
 		self.grad_W = np.zeros_like(self.W)
@@ -68,22 +84,28 @@ class ConvLayer():
 		self.input_after_pad=input_after_pad
 		self.batch_size,self.channels,self.height,self.width=Input.shape
 
-		input_after_trans=input_after_pad.transpose(0,2,3,1)
 		self.input_after_trans=input_after_pad.transpose(0,2,3,1)
 		# kh, kw, C, kn = self.filters.shape
 		kh=self.kernel_size
 		kw=self.kernel_size
+		X_pad=self.input_after_pad
+		A_final=im2col(X_pad,kh,kw)
+		N, C, H, W = self.input_after_pad.shape
 		s=1
-		# print(Input.shape)
-		# print(inputs.shape)
-		X_split = split_by_strides(input_after_trans, kh, kw, s)   # X_split.shape: (N, oh, ow, kh, kw, C)
-		# print(X_split.shape)
-		feature_map = np.tensordot(X_split,self.W, axes=[(3,4,5), (2,3,1)])
-		# print(split_by_strides(inputs,kernel_size,kernel_size,1).shape)
-		# print(feature_map.shape)
+		oh = (H - kh) // s + 1
+		ow = (W - kw) // s + 1
 
-		return feature_map.transpose(0,3,1,2)#,self.W
+		k_order=self.W.ravel().reshape(self.channels,self.inputs*self.kernel_size*self.kernel_size)
+		self.k_order=k_order
+		res_A=np.matmul(k_order,A_final)
 
+		h_s,w_s=res_A.strides
+		strides=    h_s,w_s*self.kernel_size*self.kernel_size,h_s,w_s
+		shape=(1,self.batch_size,self.channels,self.height*self.width)
+		res=np.lib.stride_tricks.as_strided(res_A, shape=shape, strides=strides)
+
+
+		return res.reshape(self.batch_size,self.channels,oh,ow)
 
 	    ############################################################################
 

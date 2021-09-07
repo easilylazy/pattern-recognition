@@ -31,8 +31,12 @@ def plot_loss_and_acc(loss_and_acc_dict,save=True,show=True,path='res/',title='l
 		if show:
 			plt.show()
 
+		maxEpoch = len(tmp[0][1])
+
 		maxAcc = min(1, max([max(x[1]) for x in loss_and_acc_dict.values()]) + 0.1)
 		minAcc = max(0, min([min(x[1]) for x in loss_and_acc_dict.values()]) - 0.1)
+
+
 
 		fig = plt.figure()
 

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # 要添加一个新单元，输入 '# %%'
 # 要添加一个新的标记单元，输入 '# %% [markdown]'
 # %%
@@ -24,7 +25,7 @@ import torch.nn.functional as F
 
 device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-pngname = "convnet2fc3_dr_lr_"
+pngname = "mlp2_lr_"
 drop_out=0.3
 epochs = 50
 
@@ -33,23 +34,23 @@ class Net(nn.Module):
         super(Net, self).__init__()
         # 1 input image channel, 6 output channels, 7x7 square convolution
         # kernel
-        self.conv1 = nn.Conv2d(1, 8, 3, 1, 1)
-        self.conv2 = nn.Conv2d(8, 16, 3, 1, 1)
+        # self.conv1 = nn.Conv2d(1, 8, 3, 1, 1)
+        # self.conv2 = nn.Conv2d(8, 16, 3, 1, 1)
         # an affine operation: y = Wx + b
         self.fc1 = nn.Linear(16 * 7 * 7, 128)  # 7*7 from image dimension
-        self.fc2 = nn.Linear(128, 64)
-        self.fc3 = nn.Linear(64, 10)
+        # self.fc2 = nn.Linear(128, 64)
+        self.fc3 = nn.Linear(128, 10)
         self.fc_dropout = nn.Dropout(drop_out) 
 
     def forward(self, x):
         # Max pooling over a (2, 2) window
-        x = F.max_pool2d(F.relu(self.conv1(x)), (2, 2))
+        # x = F.max_pool2d(F.relu(self.conv1(x)), (2, 2))
         # If the size is a square, you can specify with a single number
-        x = self.fc_dropout(x)
-        x = F.max_pool2d(F.relu(self.conv2(x)), 2)
+        # x = self.fc_dropout(x)
+        # x = F.max_pool2d(F.relu(self.conv2(x)), 2)
         x = torch.flatten(x, 1)  # flatten all dimensions except the batch dimension
         x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
+        # x = F.relu(self.fc2(x))
         x = self.fc3(x)
         return x
 
@@ -137,6 +138,6 @@ loss,accu=test_loop(test_dataloader, model_load, loss_fn)
 from plot import plot_loss_and_acc
 
 filename = pngname+str(learning_rate)+'_epo_'+str(epochs)+'_acc_'+str(accu)+'_loss_'+str(loss)
-plot_loss_and_acc({"ConvNet": [avg_test_loss, avg_test_acc]}, filename=filename)
+plot_loss_and_acc({"MLP": [avg_test_loss, avg_test_acc]}, filename=filename)
 
 print("Done!")

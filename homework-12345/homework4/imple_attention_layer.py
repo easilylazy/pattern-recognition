@@ -27,8 +27,30 @@ device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 pngname = "convnet2fc3_dr_lr_"
 drop_out=0.3
 epochs = 50
+def Attn(self,len):
+    def __init__(self):
+        self.query=nn.Linear(len,len)
+
+
+        
+        pass
+    def forward(self, x):
+        # x shape: batch, len
+        align=self.query(x) # batch, len
+
+        soft=F.softmax(align) # batch, len
+
+        attn=np.multiply(soft,align)
+
+        # attn=torch.matmul(x,soft)
+
+
+    
+
+
 
 class Net(nn.Module):
+
     def __init__(self):
         super(Net, self).__init__()
         # 1 input image channel, 6 output channels, 7x7 square convolution
@@ -39,6 +61,9 @@ class Net(nn.Module):
         self.fc1 = nn.Linear(16 * 7 * 7, 128)  # 7*7 from image dimension
         self.fc2 = nn.Linear(128, 64)
         self.fc3 = nn.Linear(64, 10)
+
+
+
         self.fc_dropout = nn.Dropout(drop_out) 
 
     def forward(self, x):
