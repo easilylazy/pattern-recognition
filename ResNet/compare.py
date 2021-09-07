@@ -4,7 +4,7 @@ import pandas as pd
 
 filePath = 'csv'
 savepath= 'img/'
-filename='layer_com_'
+filename='plain_com_'
 show=False
 show=True
 
@@ -13,7 +13,7 @@ types=[]
 for i,j,k in os.walk(filePath):
     print(i)
     for name in k:
-        if(name.startswith('dp')):
+        if(True):#name.startswith('dp')):
             print(name)
             print('csv/'+name)
             data=pd.read_csv('csv/'+name)
@@ -21,12 +21,18 @@ for i,j,k in os.walk(filePath):
             # print(data)
             print(name.split('_')[5])
             print(name.split('_')[1]+' batch-'+name.split('_')[11])
-            types.append(name.split('_')[5])
+            if(name.startswith('dp')):
+                classname='resnet'
+            else:
+                classname='plain'
+
+            types.append(classname+' '+name.split('_')[5])
 
 
 # plot
 import matplotlib.pyplot as plt
-fig = plt.figure()
+figsize=(16,9)
+fig = plt.figure(figsize=figsize)
 maxEpoch = 164
 # strides=40
 strides = 1
@@ -36,7 +42,7 @@ label_strides = int(maxEpoch // 10)
 # minLoss = max(0, min([min(x[0]) for x in loss_and_acc_dict.values()]) - 0.1)
 minLoss=0
 maxLoss=1#0.15
-colors=['c','m','y','b','g','r']
+colors=['c','m','y','b','g','r','coral','teal']
 
 attributes=['test_loss',  'train_loss']
 for i in range(len(types)):
@@ -61,7 +67,7 @@ plt.xticks(range(0, maxEpoch + 1, label_strides),range(0, maxEpoch + 1, label_st
 plt.savefig(savepath+filename+'_loss'+'.png')
 # if show:
 #     plt.show()
-fig = plt.figure()
+fig = plt.figure(figsize=figsize)
 
 attributes=[ 'test_acc',  'train_acc']
 for i in range(len(types)):
