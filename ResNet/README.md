@@ -2,10 +2,29 @@
 pytorch实现    
 ref: Deep Residual Learning for Image Recognition
 
+- [ResNet](#resnet)
+  - [使用](#使用)
+  - [思路](#思路)
+  - [param](#param)
+  - [记录](#记录)
+    - [优化过程](#优化过程)
+  - [结果分析](#结果分析)
+    - [数据处理](#数据处理)
+    - [多GPU训练](#多gpu训练)
+    - [short cut](#short-cut)
+    - [层数](#层数)
+    - [resnet与plain对照](#resnet与plain对照)
+
 ## 使用
 
 下载数据集
 [cifar](http://www.cs.toronto.edu/~kriz/cifar.html)
+
+```cmd
+cd data/
+wget http://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz
+tar -xvf cifar-10-python.tar.gz cifar-10-batches-py/
+```
 
 ## 思路
 
@@ -92,6 +111,8 @@ TODO: ~~比较库函数的数据读取有何差异~~
 而对于数据增强部分的transform，库函数是放在了`__getitem__`方法中，值得学习。我的方法是在获取数据集时将所有数据遍历，得到PIL格式的image，再通过transform，这样读取数据耗时较长，因此采取保存数据的方式减少后期耗时。
 
 这个问题仍然悬而未决，需要通过重复实验来验证
+
+同样把transform放到了`__getitem__`方法中后，与应用库函数训练效果相仿。
 
 ### 多GPU训练
 ![gpu](img/gpu_com__acc.png)

@@ -3,6 +3,7 @@
 # %%
 from datetime import date, time
 import os
+import sys
 import numpy
 from torch.nn.common_types import T
 from torch.utils import data
@@ -11,6 +12,9 @@ from torchvision import transforms
 import torch
 
 from PIL import Image
+
+torch.manual_seed(0)
+
 
 class DataSets(object):
     pass
@@ -43,31 +47,13 @@ class DataSet(object):
         assert (
             len(images) == len(labels)
         ), "images.shape: %s labels.shape: %s" % (len(images), len(labels))
+        self.type=type
         self._num_examples = len(images)
         # shape is [num examples, rows*columns*channels] 
         X = images.reshape(images.shape[0], 3, 32, 32)
-        X_trans = X.transpose(0,2,3,1)
+        self.X_trans = X.transpose(0,2,3,1)
         trans_after=torch.zeros(X.shape)
-        if type=='train':
-            for i in range(self._num_examples):
-                trans = [transforms.RandomHorizontalFlip(),
-                        transforms.RandomCrop(32, padding=4),
-                        transforms.ToTensor(),
-                        transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.247, 0.243, 0.261])]
-                trans = transforms.Compose(trans)
-                x=X_trans[i]
-                PIL_image = Image.fromarray(x) 
-                trans_after[i]=(trans(PIL_image))
-        elif type=='test':
-            for i in range(self._num_examples):
-                trans = [transforms.ToTensor(),
-                        transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.247, 0.243, 0.261])]
-                trans = transforms.Compose(trans)
-                x=X_trans[i]
-                PIL_image = Image.fromarray(x) 
-                trans_after[i]=(trans(PIL_image))
-        elif type=='raw':
-            trans_after=X
+
 
         if one_hot == True:
             labels=dense_to_one_hot(labels,num_classes=10)
@@ -93,7 +79,24 @@ class DataSet(object):
         return self._epochs_completed
 
     def __getitem__(self, index):
-        return self._images[index], self._labels[index]
+        trans_after=self.X_trans[index]
+        if self.type=='train':
+                trans = [transforms.RandomHorizontalFlip(),
+                        transforms.RandomCrop(32, padding=4),
+                        transforms.ToTensor(),
+                        transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.247, 0.243, 0.261])]
+                trans = transforms.Compose(trans)
+                PIL_image = Image.fromarray(trans_after) 
+                trans_after=(trans(PIL_image))
+        elif self.type=='test':
+                trans = [transforms.ToTensor(),
+                        transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.247, 0.243, 0.261])]
+                trans = transforms.Compose(trans)
+                PIL_image = Image.fromarray(trans_after) 
+                trans_after=(trans(PIL_image))
+        elif self.type=='raw':
+                trans_after=X[index]
+        return trans_after, self._labels[index]
 
     def __len__(self):
         return len(self._images)
