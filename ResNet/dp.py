@@ -13,7 +13,7 @@ import torch
 
 
 # %%
-mnist_dataset = input_data.load_data(path='data/cifar-10-batches-py',one_hot=True,augment=True)
+mnist_dataset = input_data.load_data(path='data/cifar-10-batches-py',one_hot=False,augment=True)
 
 
 # %%
@@ -23,46 +23,53 @@ learning_rate = 0.1
 unit_num=2
 max_iter = 64e3
 epochs = int(max_iter//(50000//batch_size))
-pngname = "dp_otherdata_bn_cross_unit_layer"+str(6*(unit_num+1)+2)+"_delr_lr_"+str(learning_rate)+'_epo_'+str(epochs)+'_batch_'+str(batch_size)
-print(pngname)
-
-# %%
-from torch.utils.data import DataLoader
-
-# train_dataloader = DataLoader(mnist_dataset.train, batch_size=batch_size, shuffle=True)
-# test_dataloader = DataLoader(mnist_dataset.test, batch_size=batch_size, shuffle=True)
-
-# Data
-print('==> Preparing data..')
-transform_train = transforms.Compose([
-    transforms.RandomCrop(32, padding=4),
-    transforms.RandomHorizontalFlip(),
-    transforms.ToTensor(),
-    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-])
-
-transform_test = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-])
-
-trainset = torchvision.datasets.CIFAR10(
-    root='./data', train=True, download=True, transform=transform_train)
-train_dataloader = torch.utils.data.DataLoader(
-    trainset, batch_size=128, shuffle=True, num_workers=2)
-
-testset = torchvision.datasets.CIFAR10(
-    root='./data', train=False, download=True, transform=transform_test)
-test_dataloader = torch.utils.data.DataLoader(
-    testset, batch_size=100, shuffle=False, num_workers=2)
+own=False
 import os
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 # os.environ["CUDA_VISIBLE_DEVICES"] = "2,3,4,5,6,7"
-# os.environ["CUDA_VISIBLE_DEVICES"] = "6,7"
-# os.environ["CUDA_VISIBLE_DEVICES"] = "2,3"
 os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "2,3"
 # os.environ["CUDA_VISIBLE_DEVICES"] = "4,5"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "6,7"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "9"
+
+if own:
+    pngname = "dp_ownstd_aug_bnA_cross_sched_layer"+str(6*(unit_num+1)+2)+"_delr_lr_"+str(learning_rate)+'_epo_'+str(epochs)+'_batch_'+str(batch_size)
+else:
+    pngname = "dp_otherstd_aug_bnB_cross_ori_layer"+str(6*(unit_num+1)+2)+"_delr_lr_"+str(learning_rate)+'_epo_'+str(epochs)+'_batch_'+str(batch_size)
+
+print(pngname)
+
+# %% data
+from torch.utils.data import DataLoader
+
+if own:
+    train_dataloader = DataLoader(mnist_dataset.train, batch_size=batch_size, shuffle=True)
+    test_dataloader = DataLoader(mnist_dataset.test, batch_size=batch_size, shuffle=False)
+else:
+    print('==> Preparing data..')
+    transform_train = transforms.Compose([
+        transforms.RandomCrop(32, padding=4),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261)),
+    ])
+
+    transform_test = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261)),
+    ])
+
+    trainset = torchvision.datasets.CIFAR10(
+        root='./data', train=True, download=True, transform=transform_train)
+    train_dataloader = torch.utils.data.DataLoader(
+        trainset, batch_size=128, shuffle=True, num_workers=2)
+
+    testset = torchvision.datasets.CIFAR10(
+        root='./data', train=False, download=True, transform=transform_test)
+    test_dataloader = torch.utils.data.DataLoader(
+        testset, batch_size=100, shuffle=False, num_workers=2)
 
 # %%
 import torch
@@ -92,8 +99,8 @@ def train_loop(dataloader, model, loss_fn, optimizer):
     train_loss, correct = 0, 0
     for batch, (X, y) in enumerate(dataloader):
         # Compute prediction and loss
-        # X = X.reshape(X.shape[0], 3, 32, 32).to(torch.float32).to(device)
-        X = X.reshape(X.shape[0], 3, 32, 32).to(device)
+        X = X.reshape(X.shape[0], 3, 32, 32).to(torch.float32).to(device)
+        # X = X.reshape(X.shape[0], 3, 32, 32).to(device)
         y = y.to(device)
 
         pred = model(X)
@@ -122,8 +129,8 @@ def test_loop(dataloader, model, loss_fn):
 
     with torch.no_grad():
         for X, y in dataloader:
-            # X = X.reshape(X.shape[0], 3, 32, 32).to(torch.float32).to(device)
-            X = X.reshape(X.shape[0], 3, 32, 32).to(device)
+            X = X.reshape(X.shape[0], 3, 32, 32).to(torch.float32).to(device)
+            # X = X.reshape(X.shape[0], 3, 32, 32).to(device)
             y = y.to(device)
             pred = model(X)
             test_loss += loss_fn(pred, y).item()
@@ -142,7 +149,11 @@ import torch.optim as optim
 
 loss_fn = nn.CrossEntropyLoss()
 # for learning_rate in range(0.01)
-optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate,weight_decay=0.0001,momentum=0.9)
+# optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate,weight_decay=0.0001,momentum=0.9)
+optimizer = optim.SGD(net.parameters(), lr=learning_rate,
+                      momentum=0.9, weight_decay=5e-4)
+scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
+
 # %%
 model_load = net.to(device)
 if torch.cuda.device_count() > 1:
@@ -173,9 +184,11 @@ for t in range(epochs):
     if SAVE_CKP:
         torch.save(model_load.state_dict(), filename)
         print("save in " + filename)
-    if t==epochs//2 or t==epochs//4*3:
-        learning_rate*=0.1
-        optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate,weight_decay=0.0001,momentum=0.9)
+    # if t==epochs//2 or t==epochs//4*3:
+    #     learning_rate*=0.1
+    #     optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate,weight_decay=0.0001,momentum=0.9)
+    scheduler.step()
+
 loss=np.max(avg_test_loss)
 accu=np.max(avg_test_acc)
 
