@@ -4,6 +4,7 @@ ref: Deep Residual Learning for Image Recognition
 
 - [ResNet](#resnet)
   - [使用](#使用)
+  - [结果](#结果)
   - [思路](#思路)
   - [param](#param)
   - [记录](#记录)
@@ -26,6 +27,27 @@ wget http://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz
 tar -xvf cifar-10-python.tar.gz cifar-10-batches-py/
 ```
 
+```cmd
+pip install -r requirements.txt
+python pd.py
+```
+
+## 结果
+
+
+
+|layer    | Model       | Acc.        |
+| ----------------- | ----------- |---|
+|20| ResNet      | 88.66% (89.71%)      |
+|  | plain       | 86.79%      |
+|32| ResNet      | 91.24%      |
+|  | plain       | 88.33%      |
+|44| ResNet      | 90.23%      |
+|  | plain       | 85.18%      |
+|56| ResNet      | 90.14%      |
+|  | plain       | 84.38%      |
+
+* 注：为了统一标准便于对比，列出为其他结构都一致的结果。由于部分更新未在所有网络进行实验，将部分的最优结果列在括号内
 ## 思路
 
 将残差模块独立，问题在于另一条支流的x
@@ -112,7 +134,7 @@ TODO: ~~比较库函数的数据读取有何差异~~
 
 这个问题仍然悬而未决，需要通过重复实验来验证
 
-同样把transform放到了`__getitem__`方法中后，与应用库函数训练效果相仿。
+9.8 同样把transform放到了`__getitem__`方法中后，与应用库函数训练效果相仿。(acc: 0.8971)
 
 ### 多GPU训练
 ![gpu](img/gpu_com__acc.png)
