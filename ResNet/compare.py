@@ -4,7 +4,7 @@ import pandas as pd
 
 filePath = 'csv'
 savepath= 'img/'
-filename='plain_com_'
+filename='trans_com_'
 show=False
 show=True
 
@@ -13,7 +13,7 @@ types=[]
 for i,j,k in os.walk(filePath):
     print(i)
     for name in k:
-        if(True):#name.startswith('dp')):
+        if name.startswith('dp'):
             print(name)
             print('csv/'+name)
             data=pd.read_csv('csv/'+name)
@@ -21,12 +21,14 @@ for i,j,k in os.walk(filePath):
             # print(data)
             print(name.split('_')[5])
             print(name.split('_')[1]+' batch-'+name.split('_')[11])
-            if(name.startswith('dp')):
-                classname='resnet'
-            else:
-                classname='plain'
 
-            types.append(classname+' '+name.split('_')[5])
+            if(name.split('_')[1][:3]=='aug'):
+                form='init'
+            elif(name.split('_')[1][:3]=='ori'):
+                form='ori'
+            else:
+                form='getitem'
+            types.append(form)
 
 
 # plot
