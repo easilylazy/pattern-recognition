@@ -20,7 +20,7 @@ import torch.backends.cudnn as cudnn
 # params
 batch_size=128
 learning_rate = 0.1
-unit_num=2
+unit_num=6
 max_iter = 64e3
 epochs = 200#int(max_iter//(50000//batch_size))
 own=True
@@ -28,12 +28,12 @@ own=False
 import os
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "2,3,5,8,9"
+os.environ["CUDA_VISIBLE_DEVICES"] = "2,5,8,9"
 # os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
 # os.environ["CUDA_VISIBLE_DEVICES"] = "2,3"
 # os.environ["CUDA_VISIBLE_DEVICES"] = "4,5"
 # # os.environ["CUDA_VISIBLE_DEVICES"] = "6,7"
-os.environ["CUDA_VISIBLE_DEVICES"] = "5,6"
+os.environ["CUDA_VISIBLE_DEVICES"] = "3,4"
 # os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,6,7"
 device_ids = [0, 1]
 
@@ -66,7 +66,6 @@ import torch.nn.functional as F
 device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-# net = ResNet().to(device)
 net = ResNet(unit_num=unit_num).cuda()
 try:
     torch.cuda.empty_cache()  # PyTorch thing
@@ -112,7 +111,7 @@ else:
 def train_loop(dataloader, model, loss_fn, optimizer):
     size = len(dataloader.dataset)
     num_batches = len(dataloader)
-
+    model.train()
     train_loss, correct = 0, 0
     for batch, (X, y) in enumerate(dataloader):
         # Compute prediction and loss
@@ -120,7 +119,6 @@ def train_loop(dataloader, model, loss_fn, optimizer):
         X,y=X.cuda(),y.cuda()
 
         pred = model(X)
-        # loss = loss_fn(pred, y.to(device))
         loss = loss_fn(pred, y)
         # Backpropagation
         optimizer.zero_grad()
@@ -138,6 +136,7 @@ def train_loop(dataloader, model, loss_fn, optimizer):
     return train_loss, correct
 
 def test_loop(dataloader, model, loss_fn):
+    model.eval()
     size = len(dataloader.dataset)
     num_batches = len(dataloader)
     test_loss, correct = 0, 0
@@ -168,34 +167,22 @@ optimizer = optim.SGD(net.parameters(), lr=learning_rate,
 scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,
                                                         milestones=[100, 150], last_epoch=-1)
 # %%
-model_load = net.to(device)
-if torch.cuda.device_count() > 1:
-    print("Let's use", torch.cuda.device_count(), "GPUs!")
-    # 就这一行
-    model_load = nn.DataParallel(model_load, device_ids=device_ids)
-try:
-    model_load.load_state_dict(torch.load("model_weights.pth"))
-    model_load.eval()
-except:
-    pass
-
-# %%
-test_loop(test_dataloader, model_load, loss_fn)
+test_loop(test_dataloader, net, loss_fn)
 SAVE_CKP = False
 
 avg_train_loss, avg_train_acc = [], []
 avg_test_loss, avg_test_acc = [], []
 for t in range(epochs):
     print(f"Epoch {t+1}\n-------------------------------")
-    train_loss,train_acc=train_loop(train_dataloader, model_load, loss_fn, optimizer)
-    test_loss, test_acc = test_loop(test_dataloader, model_load, loss_fn)
+    train_loss,train_acc=train_loop(train_dataloader, net, loss_fn, optimizer)
+    test_loss, test_acc = test_loop(test_dataloader, net, loss_fn)
     avg_train_loss.append(train_loss)
     avg_train_acc.append(train_acc)
     avg_test_loss.append(test_loss)
     avg_test_acc.append(test_acc)
     filename = "checkpoint\model_w_epoch" + pngname + str(t) + ".pth"
     if SAVE_CKP:
-        torch.save(model_load.state_dict(), filename)
+        torch.save(net.state_dict(), filename)
         print("save in " + filename)
     # if t==epochs//2 or t==epochs//4*3:
     #     learning_rate*=0.1
