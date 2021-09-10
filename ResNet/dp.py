@@ -7,13 +7,13 @@ import input_data
 import matplotlib.pyplot as plt
 import numpy as np
 from net import ResNet_BN as ResNet
+# from resnet import resnet20 as ResNet
 import torchvision
 from torchvision import transforms
 import torch
+import torch.backends.cudnn as cudnn
 
 
-# %%
-mnist_dataset = input_data.load_data(path='data/cifar-10-batches-py',one_hot=False,augment=True)
 
 
 # %%
@@ -22,54 +22,38 @@ batch_size=128
 learning_rate = 0.1
 unit_num=2
 max_iter = 64e3
-epochs = int(max_iter//(50000//batch_size))
+epochs = 200#int(max_iter//(50000//batch_size))
+own=True
 own=False
 import os
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-# os.environ["CUDA_VISIBLE_DEVICES"] = "2,3,4,5,6,7"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "2,3,5,8,9"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
 # os.environ["CUDA_VISIBLE_DEVICES"] = "2,3"
 # os.environ["CUDA_VISIBLE_DEVICES"] = "4,5"
-# os.environ["CUDA_VISIBLE_DEVICES"] = "6,7"
-# os.environ["CUDA_VISIBLE_DEVICES"] = "9"
+# # os.environ["CUDA_VISIBLE_DEVICES"] = "6,7"
+os.environ["CUDA_VISIBLE_DEVICES"] = "5,6"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,6,7"
+device_ids = [0, 1]
+
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
+                    help='number of data loading workers (default: 4)')
+parser.add_argument('-b', '--batch-size', default=batch_size, type=int,
+                    metavar='N', help='mini-batch size (default: 128)')
+
+args = parser.parse_args()
+
 
 if own:
-    pngname = "dp_ownstd_aug_bnA_cross_sched_layer"+str(6*(unit_num+1)+2)+"_delr_lr_"+str(learning_rate)+'_epo_'+str(epochs)+'_batch_'+str(batch_size)
+    pngname = "dp_ownstd_aug_bnB_cross_sched_layer"+str(6*(unit_num+1)+2)+"_delr_lr_"+str(learning_rate)+'_epo_'+str(epochs)+'_batch_'+str(batch_size)
 else:
-    pngname = "dp_otherstd_aug_bnB_cross_ori_layer"+str(6*(unit_num+1)+2)+"_delr_lr_"+str(learning_rate)+'_epo_'+str(epochs)+'_batch_'+str(batch_size)
+    pngname = "dp_otherstd_aug_bnB_cross_MultiStepLR_layer"+str(6*(unit_num+1)+2)+"_delr_lr_"+str(learning_rate)+'_epo_'+str(epochs)+'_batch_'+str(batch_size)
 
 print(pngname)
-
-# %% data
-from torch.utils.data import DataLoader
-
-if own:
-    train_dataloader = DataLoader(mnist_dataset.train, batch_size=batch_size, shuffle=True)
-    test_dataloader = DataLoader(mnist_dataset.test, batch_size=batch_size, shuffle=False)
-else:
-    print('==> Preparing data..')
-    transform_train = transforms.Compose([
-        transforms.RandomCrop(32, padding=4),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261)),
-    ])
-
-    transform_test = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261)),
-    ])
-
-    trainset = torchvision.datasets.CIFAR10(
-        root='./data', train=True, download=True, transform=transform_train)
-    train_dataloader = torch.utils.data.DataLoader(
-        trainset, batch_size=128, shuffle=True, num_workers=2)
-
-    testset = torchvision.datasets.CIFAR10(
-        root='./data', train=False, download=True, transform=transform_test)
-    test_dataloader = torch.utils.data.DataLoader(
-        testset, batch_size=100, shuffle=False, num_workers=2)
 
 # %%
 import torch
@@ -79,17 +63,50 @@ import torch.nn.functional as F
 
 # torch.distributed.init_process_group(backend="nccl")
 
-device_ids = [0, 1]
 device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-net = ResNet(unit_num=unit_num).to(device)
+# net = ResNet().to(device)
+net = ResNet(unit_num=unit_num).cuda()
 try:
     torch.cuda.empty_cache()  # PyTorch thing
     print("success clean")
 except:
     pass
+# %% data
+from torch.utils.data import DataLoader
 
+if own:
+    mnist_dataset = input_data.load_data(path='data/cifar-10-batches-py',one_hot=False,augment=True)
+
+    train_dataloader = DataLoader(mnist_dataset.train, batch_size=batch_size, shuffle=True)
+    test_dataloader = DataLoader(mnist_dataset.test, batch_size=batch_size, shuffle=False)
+else:
+        # transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261)),
+
+    cudnn.benchmark = True
+
+    # normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+    #                                  std=[0.229, 0.224, 0.225])
+    normalize = transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.247, 0.243, 0.261])
+
+    train_dataloader = torch.utils.data.DataLoader(
+        torchvision.datasets.CIFAR10(root='./data', train=True, transform=transforms.Compose([
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomCrop(32, 4),
+            transforms.ToTensor(),
+            normalize,
+        ]), download=True),
+        batch_size=args.batch_size, shuffle=True,
+        num_workers=args.workers, pin_memory=True)
+
+    test_dataloader = torch.utils.data.DataLoader(
+        torchvision.datasets.CIFAR10(root='./data', train=False, transform=transforms.Compose([
+            transforms.ToTensor(),
+            normalize,
+        ])),
+        batch_size=128, shuffle=False,
+        num_workers=args.workers, pin_memory=True)
 
 # %%
 def train_loop(dataloader, model, loss_fn, optimizer):
@@ -99,9 +116,8 @@ def train_loop(dataloader, model, loss_fn, optimizer):
     train_loss, correct = 0, 0
     for batch, (X, y) in enumerate(dataloader):
         # Compute prediction and loss
-        X = X.reshape(X.shape[0], 3, 32, 32).to(torch.float32).to(device)
-        # X = X.reshape(X.shape[0], 3, 32, 32).to(device)
-        y = y.to(device)
+
+        X,y=X.cuda(),y.cuda()
 
         pred = model(X)
         # loss = loss_fn(pred, y.to(device))
@@ -111,16 +127,15 @@ def train_loop(dataloader, model, loss_fn, optimizer):
         loss.backward()
         optimizer.step()
 
-        train_loss+=loss.cpu().detach()
-        correct += (pred.cpu().detach().argmax(1) == y.cpu()).type(torch.float).sum().item()
-
+        train_loss+=loss.item()
+        correct += (pred.data.argmax(1) == y).type(torch.int).sum().item()
 
         if batch % 100 == 0:
             loss, current = loss.item(), batch * len(X)
             print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
     train_loss /= num_batches
     correct /= size
-    return train_loss.numpy(), correct
+    return train_loss, correct
 
 def test_loop(dataloader, model, loss_fn):
     size = len(dataloader.dataset)
@@ -129,12 +144,10 @@ def test_loop(dataloader, model, loss_fn):
 
     with torch.no_grad():
         for X, y in dataloader:
-            X = X.reshape(X.shape[0], 3, 32, 32).to(torch.float32).to(device)
-            # X = X.reshape(X.shape[0], 3, 32, 32).to(device)
-            y = y.to(device)
+            X,y=X.cuda(),y.cuda()
             pred = model(X)
             test_loss += loss_fn(pred, y).item()
-            correct += (pred.argmax(1) == y).type(torch.float).sum().item()
+            correct += (pred.argmax(1) == y).type(torch.int).sum().item()
 
     test_loss /= num_batches
     correct /= size
@@ -143,17 +156,17 @@ def test_loop(dataloader, model, loss_fn):
     )
     return test_loss, correct
 
-
 # %%
 import torch.optim as optim
 
-loss_fn = nn.CrossEntropyLoss()
+loss_fn = nn.CrossEntropyLoss().cuda()
 # for learning_rate in range(0.01)
 # optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate,weight_decay=0.0001,momentum=0.9)
 optimizer = optim.SGD(net.parameters(), lr=learning_rate,
-                      momentum=0.9, weight_decay=5e-4)
-scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
-
+                      momentum=0.9, weight_decay=1e-4)
+# scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
+scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,
+                                                        milestones=[100, 150], last_epoch=-1)
 # %%
 model_load = net.to(device)
 if torch.cuda.device_count() > 1:
