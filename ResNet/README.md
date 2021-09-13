@@ -17,6 +17,8 @@ ref: Deep Residual Learning for Image Recognition
     - [resnet与plain对照](#resnet与plain对照)
   - [交流反思](#交流反思)
     - [多卡训练](#多卡训练)
+- [附：imagenet实现](#附imagenet实现)
+  - [参数](#参数)
 
 ## 使用
 
@@ -63,15 +65,12 @@ python pd.py
 
 记录参数的设置
 
-SGD
-batch size 128
-weight decay of 0.0001  
-momentum of 0.9
-
-not use dropout 
-
-
-
+- batch size 128
+- SGD
+  - learning rate starts from 0.1
+  - weight decay of 0.0001  
+  - momentum of 0.9
+- not use dropout 
 
  Then we use a stack of 6n layers wi
 
@@ -178,3 +177,22 @@ TODO: ~~比较库函数的数据读取有何差异~~
 发现问题：应用DP时，相同参数下，使用不同的卡数会影响训练结果。具体表现为，多卡的测试效果要低于双卡。
 
 原因：BN是普通的BN，即对于单卡的数据进行归一化。由于卡数影响单卡数据集大小，也影响BN的结果。若使卡数不影响结果，应使用asyncBN
+
+# 附：imagenet实现
+
+## 参数
+- batch size 256
+- SGD
+  - learning rate starts from 0.1
+  - weight decay of 0.0001  
+  - momentum of 0.9
+- not use dropout 
+
+> We use SGD with a mini-batch size of 256.  The learning rate starts from 0.1 and is divided by 10 when the error plateaus, and the models are trained for up to60×104iterations. Weuse a weight decay of 0.0001 and a momentum of 0.9.  We do not use dropout [14], following the practice in [16].
+
+数据集信息： 
+- 训练集：1,281,167张图片+标签 
+- 验证集：50,000张图片+标签 
+- 测试集：100,000张图片
+
+
