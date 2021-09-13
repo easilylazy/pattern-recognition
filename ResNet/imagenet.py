@@ -2,62 +2,36 @@
 # 要添加一个新的标记单元，输入 '# %% [markdown]'
 # %%
 import numpy as np
-from resnet18 import ResNet_BN as ResNet
-
-from torchvision import datasets
-from torchvision import transforms
+import pandas as pd
 import torch
 import torch.backends.cudnn as cudnn
-
-# %%
-import torch
 import torch.nn as nn
 import torch.optim as optim
+
 from plot import plot_loss_and_acc
-import pandas as pd
+from solver import get_dataloader, train_loop, test_loop
+from resnet18 import ResNet_BN as ResNet
 
 # %%
 # params
 batch_size = 256
 learning_rate = 0.1
 total_layer = 18
-max_iter = 64e4
+max_iter = 60e4
 epochs = int(max_iter // (50000 // batch_size))
 own = True
 own = False
 import os
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "8,9"
+os.environ["CUDA_VISIBLE_DEVICES"] = "9"
 # os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
 # os.environ["CUDA_VISIBLE_DEVICES"] = "2,3,4,5,6,7"
 # os.environ["CUDA_VISIBLE_DEVICES"] = "4,5"
 # # os.environ["CUDA_VISIBLE_DEVICES"] = "6,7"
 # os.environ["CUDA_VISIBLE_DEVICES"] = "3,4"
 # os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,6,7"
-device_ids = [0, 1]
-
-import argparse
-
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "-j",
-    "--workers",
-    default=4,
-    type=int,
-    metavar="N",
-    help="number of data loading workers (default: 4)",
-)
-parser.add_argument(
-    "-b",
-    "--batch-size",
-    default=batch_size,
-    type=int,
-    metavar="N",
-    help="mini-batch size (default: 256)",
-)
-
-args = parser.parse_args()
+device_ids = [0]
 
 
 pngname = (
@@ -74,8 +48,9 @@ pngname = (
 print(pngname)
 
 
+
 try:
-    torch.cuda.empty_cache()
+    torch.cuda.empty_cache()  
     print("success clean")
 except:
     pass
@@ -101,118 +76,11 @@ scheduler = torch.optim.lr_scheduler.MultiStepLR(
 cudnn.benchmark = True
 # %% data
 
-normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-# normalize = transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.247, 0.243, 0.261])
-train_transforms = transforms.Compose(
-    [
-        transforms.RandomResizedCrop(224),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-    ]
-)
-val_transforms = transforms.Compose(
-    [
-        transforms.Resize(256),
-        transforms.CenterCrop(224),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-    ]
-)
-
-
-def get_dataset():
-    """
-        Uses torchvision.datasets.ImageNet to load dataset.
-        Downloads dataset if doesn't exist already.
-        Returns:
-             torch.utils.data.TensorDataset: trainset, valset
-        """
-
-    trainset = datasets.ImageNet(
-        "/home/share/datasets/imagenet",
-        split="train",
-        transform=train_transforms,
-        target_transform=None,
-    )
-    valset = datasets.ImageNet(
-        "/home/share/datasets/imagenet",
-        split="val",
-        transform=val_transforms,
-        target_transform=None,
-    )
-    train_dataloader = torch.utils.data.DataLoader(
-        trainset,
-        batch_size=args.batch_size,
-        shuffle=True,
-        num_workers=args.workers,
-        pin_memory=True,
-    )
-
-    test_dataloader = torch.utils.data.DataLoader(
-        valset,
-        batch_size=args.batch_size,
-        shuffle=False,
-        num_workers=args.workers,
-        pin_memory=True,
-    )
-    return train_dataloader, test_dataloader
 
 
 # %%
-def train_loop(dataloader, model, loss_fn, optimizer):
-    size = len(dataloader.dataset)
-    num_batches = len(dataloader)
-    model.train()
-    train_loss, correct = 0, 0
-    for batch, (X, y) in enumerate(dataloader):
-        # Compute prediction and loss
-
-        X, y = X.cuda(), y.cuda()
-
-        pred = model(X)
-        loss = loss_fn(pred, y)
-        # Backpropagation
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-
-        train_loss += loss.item()
-        correct += (pred.data.argmax(1) == y).type(torch.int).sum().item()
-
-        if batch % 100 == 0:
-            loss, current = loss.item(), batch * len(X)
-            print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
-    train_loss /= num_batches
-    correct /= size
-    return train_loss, correct
-
-
-def test_loop(dataloader, model, loss_fn):
-    model.eval()
-
-    size = len(dataloader.dataset)
-    num_batches = len(dataloader)
-    test_loss, correct = 0, 0
-
-    with torch.no_grad():
-        for X, y in dataloader:
-            X, y = X.cuda(), y.cuda()
-            pred = model(X)
-            test_loss += loss_fn(pred, y).item()
-            correct += (pred.argmax(1) == y).type(torch.int).sum().item()
-
-    test_loss /= num_batches
-    correct /= size
-    print(
-        f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n"
-    )
-    return test_loss, correct
-
-
-# %%
-train_dataloader, test_dataloader = get_dataset()
-print("data loaded")
+train_dataloader, test_dataloader = get_dataloader(batch_size)
+print('data loaded')
 test_loop(test_dataloader, net, loss_fn)
 SAVE_CKP = False
 
@@ -230,9 +98,6 @@ for t in range(epochs):
     if SAVE_CKP:
         torch.save(net.state_dict(), filename)
         print("save in " + filename)
-    # if t==epochs//2 or t==epochs//4*3:
-    #     learning_rate*=0.1
-    #     optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate,weight_decay=0.0001,momentum=0.9)
     scheduler.step()
 
 loss = np.max(avg_test_loss)
@@ -245,13 +110,13 @@ plot_loss_and_acc(
     filename=filename,
 )
 
-## record
-foo = {}
-foo["test_loss"] = avg_test_loss
-foo["test_acc"] = avg_test_acc
-foo["train_loss"] = avg_train_loss
-foo["train_acc"] = avg_train_acc
-bar = pd.DataFrame(foo)
+## record 
+data_records = {}
+data_records["test_loss"] = avg_test_loss
+data_records["test_acc"] = avg_test_acc
+data_records["train_loss"] = avg_train_loss
+data_records["train_acc"] = avg_train_acc
+bar = pd.DataFrame(data_records)
 bar.to_csv("csv/" + filename + ".csv")
 print("Done!")
 
