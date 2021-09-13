@@ -38,7 +38,7 @@ def get_dataset():
 
 
 
-def get_dataloader(batch_size=256,workers=4):
+def get_dataloader(batch_size=256,workers=4,sampler=False):
     """
         Uses torchvision.datasets.ImageNet to load dataset.
         Downloads dataset if doesn't exist already.
@@ -46,13 +46,21 @@ def get_dataloader(batch_size=256,workers=4):
              torch.utils.data.TensorDataset: trainset, valset
         """
     trainset,valset=get_dataset()
+
+    if sampler:
+        train_sampler = torch.utils.data.DistributedSampler(trainset,shuffle=True)
+        train_shuffle = False
+    else:
+        train_sampler = None
+        train_shuffle = True
     
     train_dataloader = torch.utils.data.DataLoader(
         trainset,
         batch_size=batch_size,
-        shuffle=True,
+        shuffle=train_shuffle,
         num_workers=workers,
         pin_memory=True,
+        sampler=train_sampler,
     )
 
     test_dataloader = torch.utils.data.DataLoader(
