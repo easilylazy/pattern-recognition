@@ -73,7 +73,7 @@ def get_dataloader(batch_size=256,workers=4,sampler=False):
     return train_dataloader, test_dataloader
 
 
-def train_loop(dataloader, model, loss_fn, optimizer):
+def train_loop(dataloader, model, loss_fn, optimizer, rank):
     size = len(dataloader.dataset)
     num_batches = len(dataloader)
     model.train()
@@ -81,7 +81,7 @@ def train_loop(dataloader, model, loss_fn, optimizer):
     for batch, (X, y) in enumerate(dataloader):
         # Compute prediction and loss
 
-        X, y = X.cuda(), y.cuda()
+        X, y = X.to(rank), y.to(rank)
 
         pred = model(X)
         loss = loss_fn(pred, y)
@@ -101,7 +101,7 @@ def train_loop(dataloader, model, loss_fn, optimizer):
     return train_loss, correct
 
 
-def test_loop(dataloader, model, loss_fn):
+def test_loop(dataloader, model, loss_fn, rank):
     model.eval()
 
     size = len(dataloader.dataset)
@@ -110,7 +110,7 @@ def test_loop(dataloader, model, loss_fn):
 
     with torch.no_grad():
         for X, y in dataloader:
-            X, y = X.cuda(), y.cuda()
+            X, y = X.to(rank), y.to(rank)
             pred = model(X)
             test_loss += loss_fn(pred, y).item()
             correct += (pred.argmax(1) == y).type(torch.int).sum().item()
