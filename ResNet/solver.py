@@ -1,7 +1,10 @@
+import numpy as np
 import torch
 
 from torchvision import datasets
 from torchvision import transforms
+
+from contextlib import nullcontext
 # %% data
 def get_dataset():
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
@@ -70,7 +73,7 @@ def get_dataloader(batch_size=256,workers=4,sampler=False):
         num_workers=workers,
         pin_memory=True,
     )
-    return train_dataloader, test_dataloader
+    return train_dataloader, test_dataloader, train_sampler
 
 
 def train_loop(dataloader, model, loss_fn, optimizer, rank):
@@ -78,17 +81,19 @@ def train_loop(dataloader, model, loss_fn, optimizer, rank):
     num_batches = len(dataloader)
     model.train()
     train_loss, correct = 0, 0
+
     for batch, (X, y) in enumerate(dataloader):
         # Compute prediction and loss
 
         X, y = X.to(rank), y.to(rank)
-
-        pred = model(X)
-        loss = loss_fn(pred, y)
-        # Backpropagation
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+        my_context = model.no_sync if rank != -1 and batch % num_batches != 0 else nullcontext
+        with my_context():
+            pred = model(X)
+            loss = loss_fn(pred, y)
+            loss.backward()
+        if batch % num_batches == 0:
+            optimizer.step()
+            optimizer.zero_grad()
 
         train_loss += loss.item()
         correct += (pred.data.argmax(1) == y).type(torch.int).sum().item()
@@ -99,7 +104,6 @@ def train_loop(dataloader, model, loss_fn, optimizer, rank):
     train_loss /= num_batches
     correct /= size
     return train_loss, correct
-
 
 def test_loop(dataloader, model, loss_fn, rank):
     model.eval()

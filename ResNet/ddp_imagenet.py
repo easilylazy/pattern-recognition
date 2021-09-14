@@ -10,6 +10,10 @@ import numpy as np
 import pandas as pd
 import os 
 import shutil
+from collections import OrderedDict
+
+from torch.utils.data import sampler
+
 
 
 from resnet18 import ResNet_BN as ResNet
@@ -17,10 +21,21 @@ from solver import get_dataloader, train_loop, test_loop
 from plot import plot_loss_and_acc
 
 max_iter = 60e4
-batch_size = 256
+batch_size = 320
 total_layer=18
 epochs = int(max_iter // (1281167 // batch_size))
+load_checkpoint=True
+resume='checkpoint/ddp_imagenet_aug_bnB_cross_MultiStepLR_layer18_epo_149_batch_320checkpoint.pth.tar'
 
+# os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "8"
+# # os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3,4,5,6,7"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "2,3,4,5,6,7"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "4,5"
+# # os.environ["CUDA_VISIBLE_DEVICES"] = "6,7"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "3,4"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,6,7"
 pngname = (
     "ddp_imagenet_aug_bnB_cross_MultiStepLR_layer"
     + str(total_layer)
@@ -30,10 +45,13 @@ pngname = (
     + str(batch_size)
 )
 device = torch.device('cuda', 0)
+
+torch.cuda.empty_cache()  # PyTorch thing
+
 def save_checkpoint(state, is_best, filename=pngname+'checkpoint.pth.tar'):
     torch.save(state, filename)
     if is_best:
-        shutil.copyfile(filename, filename=pngname+'model_best.pth.tar')
+        shutil.copyfile(filename, pngname+'model_best.pth.tar')
 
 def get_arguments():
     parser = argparse.ArgumentParser()
@@ -50,27 +68,46 @@ def tradition():
     torch.cuda.set_device(args.local_rank)
     #load the dataset
     
-    train_dataloader, test_dataloader = get_dataloader(batch_size=args.batch_size,sampler=True)
+    train_dataloader, test_dataloader, sampler = get_dataloader(batch_size=args.batch_size,sampler=True)
 
     net = ResNet(total_layer=args.total_layer).cuda()
+    net = torch.nn.SyncBatchNorm.convert_sync_batchnorm(net).cuda()
     net = nn.parallel.DistributedDataParallel(net, device_ids=[args.local_rank], output_device=args.local_rank, find_unused_parameters=True)
 
     loss_fn = nn.CrossEntropyLoss().cuda()
     optimizer = optim.SGD(
         net.parameters(), lr=0.1, momentum=0.9, weight_decay=1e-4
     )
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(
-        optimizer, milestones=[60, 90], last_epoch=-1
-    )
+   
     print('data loaded')
-    test_loop(test_dataloader, net, loss_fn, rank=args.local_rank)
-    SAVE_CKP = False
-
+    best_acc=0.0
+    if load_checkpoint:
+        new_state_dict = OrderedDict()
+        loc = 'cuda:{}'.format(args.local_rank)
+        checkpoint = torch.load(resume, map_location=loc)
+        start_epoch = checkpoint['epoch']
+        best_acc = checkpoint['best_acc1']
+        test=checkpoint['state_dict']
+        for k,v in test.items():
+            name=k[7:]
+            new_state_dict[name]=v
+        net.load_state_dict(test)
+        optimizer.load_state_dict(checkpoint['optimizer'])
+        print("=> loaded checkpoint '{}' (epoch {})"
+                .format(resume, checkpoint['epoch']))
+    else:
+        start_epoch=0
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(
+        optimizer, milestones=[30, 60], last_epoch=start_epoch-1
+    )
+    # test_loop(test_dataloader, net, loss_fn, rank=args.local_rank)
     avg_train_loss, avg_train_acc = [], []
     avg_test_loss, avg_test_acc = [], []
-    best_acc=0.0
-    for epoch in range(epochs):
+    for epoch in range(start_epoch,epochs):
+        
         print(f"Epoch {epoch+1}\n-------------------------------")
+        if sampler != None:
+            sampler.set_epoch(epoch)
         train_loss, train_acc = train_loop(train_dataloader, net, loss_fn, optimizer, rank=args.local_rank)
         test_loss, test_acc = test_loop(test_dataloader, net, loss_fn, rank=args.local_rank)
         avg_train_loss.append(train_loss)
@@ -108,7 +145,7 @@ def tradition():
     data_records_pd.to_csv("csv/" + filename + ".csv")
 def setup(rank, world_size):
     os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '12377'
+    os.environ['MASTER_PORT'] = '12366'
     # os.environ['MASTER_PORT'] = '12355'
 
     # initialize the process group
@@ -124,7 +161,7 @@ def ddp_basic(rank, world_size):
     setup(rank, world_size)
 
     # create model and move it to GPU with id rank
-    train_dataloader, test_dataloader = get_dataloader(batch_size=args.batch_size,sampler=True)
+    train_dataloader, test_dataloader, sampler = get_dataloader(batch_size=args.batch_size,sampler=True)
     print('data loaded')
 
     net = ResNet(total_layer=args.total_layer).to(rank)
@@ -145,12 +182,15 @@ def ddp_basic(rank, world_size):
     avg_test_loss, avg_test_acc = [], []
     for epoch in range(epochs):
         print(f"Epoch {epoch+1}\n-------------------------------")
+        if sampler != None:
+            sampler.set_epoch(epoch)
         train_loss, train_acc = train_loop(train_dataloader, net, loss_fn, optimizer, rank=rank)
-        test_loss, test_acc = test_loop(test_dataloader, net, loss_fn, rank=rank)
+        test_loss, test_accs = test_loop(test_dataloader, net, loss_fn, rank=rank,topk=(1,5))
         avg_train_loss.append(train_loss)
         avg_train_acc.append(train_acc)
         avg_test_loss.append(test_loss)
-        avg_test_acc.append(test_acc)
+        avg_test_acc.append(test_accs)
+        test_acc=test_accs[0]
         if best_acc<test_acc:
             is_best=True
             best_acc=test_acc
@@ -190,7 +230,7 @@ def run_task(demo_fn, world_size):
              join=True)
     
 if __name__ == "__main__":
-    print(pngname)
+    # print(pngname)
     # n_gpus = torch.cuda.device_count()
     # assert n_gpus >= 2, f"Requires at least 2 GPUs to run, but got {n_gpus}"
     # world_size = n_gpus
