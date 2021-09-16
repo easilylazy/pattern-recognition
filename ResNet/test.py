@@ -1,16 +1,13 @@
+from torchvision.transforms.transforms import TenCrop
 from resnet18 import ResNet_BN as ResNet
 from torch import optim
 import torch
 from collections import OrderedDict
-import time
-
 new_state_dict = OrderedDict()
-
-gpu=9 # which gpu to use
+gpu=9
 loc = 'cuda:{}'.format(gpu)
-# which checkpoint to load
-resume='checkpoint/ddp_imagenet_aug_bnB_cross_MultiStepLR_layer18_epo_149_batch_320checkpoint.pth.tar'
-data_dir="/home/share/datasets/imagenet"
+TENCROP=True
+
 total_layer=18
 net = ResNet(total_layer=total_layer).cuda(gpu)
 optimizer = optim.SGD(
@@ -18,6 +15,8 @@ optimizer = optim.SGD(
     )
 criterion = torch.nn.CrossEntropyLoss().cuda(gpu)
 
+resume='checkpoint/ddp_imagenet_aug_bnB_cross_MultiStepLR_layer18_epo_149_batch_320checkpoint.pth.tar'
+resume='ddp_imagenet_aug_bnB_cross_MultiStepLR_layer18_epo_149_batch_320model_best.pth.tar'
 checkpoint = torch.load(resume, map_location=loc)
 start_epoch = checkpoint['epoch']
 best_acc1 = checkpoint['best_acc1']
@@ -32,18 +31,28 @@ print("=> loaded checkpoint '{}' (epoch {})"
 from torchvision import datasets
 from torchvision import transforms
 import os
-valdir = os.path.join(data_dir, 'val')
+valdir = os.path.join("/home/share/datasets/imagenet", 'val')
 normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-
-val_loader = torch.utils.data.DataLoader(
-    datasets.ImageFolder(valdir, transforms.Compose([
-        transforms.Resize(256),
-        transforms.CenterCrop(224),
-        transforms.ToTensor(),
-        normalize,
-    ])),
-    batch_size=256, shuffle=False,
-    num_workers=4, pin_memory=True)
+if TENCROP:
+    val_loader = torch.utils.data.DataLoader(
+        datasets.ImageFolder(valdir, transforms.Compose([
+            transforms.Resize(256),
+            transforms.TenCrop(224),
+            transforms.Lambda(lambda crops: torch.stack([transforms.ToTensor()(crop) for crop in crops])),
+            transforms.Lambda(lambda crops: torch.stack([normalize(crop) for crop in crops])),
+        ])),
+        batch_size=50, shuffle=False,
+        num_workers=4, pin_memory=True)
+else:
+    val_loader = torch.utils.data.DataLoader(
+        datasets.ImageFolder(valdir, transforms.Compose([
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            normalize
+        ])),
+        batch_size=50, shuffle=False,
+        num_workers=4, pin_memory=True)
 print('data loaded')
 class AverageMeter(object):
     """Computes and stores the average and current value"""
@@ -67,6 +76,7 @@ class AverageMeter(object):
     def __str__(self):
         fmtstr = '{name} {val' + self.fmt + '} ({avg' + self.fmt + '})'
         return fmtstr.format(**self.__dict__)
+import time
 class ProgressMeter(object):
     def __init__(self, num_batches, meters, prefix=""):
         self.batch_fmtstr = self._get_batch_fmtstr(num_batches)
@@ -104,9 +114,19 @@ def validate(val_loader, model, criterion,gpu=0):
                 images = images.cuda(gpu, non_blocking=True)
             if torch.cuda.is_available():
                 target = target.cuda(gpu, non_blocking=True)
+            
+            if TENCROP:
+                # 10-crop process
+                bs, nc, c, h, w = images.size()
+                # compute output
+                output = model(images.view(-1, c, h, w))
+                outputs_avg = output.view(bs,nc,-1).mean(1)
+                output=outputs_avg
+            else:
+                output = model(images)
 
-            # compute output
-            output = model(images)
+
+
             loss = criterion(output, target)
 
             # measure accuracy and record loss
@@ -122,7 +142,7 @@ def validate(val_loader, model, criterion,gpu=0):
             if i % print_freq == 0:
                 progress.display(i)
 
-        # TODO: this should also be done with the ProgressMeter
+        print('10-CROP' if TENCROP else '1-CROP')
         print(' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
               .format(top1=top1, top5=top5))
 
