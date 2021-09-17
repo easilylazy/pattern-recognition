@@ -25,7 +25,7 @@ class ResUnit_BN(nn.Module):
 
     def forward(self, xi):
         x = self.relu(self.bnList[0](self.convList[0](xi)))
-        x = self.relu(self.bnList[1](self.convList[1](x)))
+        x = self.bnList[1](self.convList[1](x))
         xo = xi + x
         xo = self.relu(xo)
         return xo
@@ -43,7 +43,7 @@ class DimUnit_BN(nn.Module):
         self.convList = nn.ModuleList()
         self.bnList = nn.ModuleList()
         self.conv1 = nn.Conv2d(in_channels, out_channels, 3, stride, 1)
-        self.conv1_2 = nn.Conv2d(in_channels, out_channels, 1, stride, 1)
+        self.conv1_2 = nn.Conv2d(in_channels, out_channels, 1, stride)
         self.conv2 = nn.Conv2d(out_channels, out_channels, 3, 1, 1)
         self.bn1 = nn.BatchNorm2d(out_channels)
         self.bn1_2 = nn.BatchNorm2d(out_channels)
@@ -53,7 +53,7 @@ class DimUnit_BN(nn.Module):
     def forward(self, xi):
 
         x = self.relu(self.bn1(self.conv1(xi)))
-        x = self.relu(self.bn2(self.conv2(x)))
+        x = self.bn2(self.conv2(x))
         if self.option == "A":
             xo = self.pad(xi[:, :, ::2, ::2]) + x
         elif self.option == "B":
@@ -73,7 +73,6 @@ class ResNet_BN(nn.Module):
         # 1 input image channel, 6 output channels, 7x7 square convolution
         # kernel
         self.conv1_0 = nn.Conv2d(3, 64, 7, 2, 3)
-        self.res1 = ResUnit_BN(16)
         self.pool1 = nn.MaxPool2d((3, 3), 2, 1)
 
         self.resunits = nn.ModuleList()
@@ -92,7 +91,6 @@ class ResNet_BN(nn.Module):
         self.pool = nn.AdaptiveAvgPool2d((1, 1))
         self.bn1 = nn.BatchNorm2d(64)
         self.fc = nn.Linear(512, 1000)
-
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
@@ -101,7 +99,7 @@ class ResNet_BN(nn.Module):
                 nn.init.constant_(m.bias, 0)
     def forward(self, x):
         # dimension 64
-        x = self.relu(self.bn1(self.pool1(self.conv1_0(x))))
+        x = self.pool1(self.relu(self.bn1(self.conv1_0(x))))
         x = self.DimUnit_BN1(x)
         layer = 0
         for i in range(self.config_layer[0] - 1):
