@@ -14,6 +14,7 @@ class ResUnit_BN(nn.Module):
     def __init__(self, channels, layers=2):
         super(ResUnit_BN, self).__init__()
         self.layers = layers
+        self.relu = nn.ReLU(inplace=True)
         self.convList = nn.ModuleList()
         self.bnList = nn.ModuleList()
         for i in range(layers):
@@ -23,10 +24,10 @@ class ResUnit_BN(nn.Module):
             self.bnList.append(bn)
 
     def forward(self, xi):
-        x = F.relu(self.bnList[0](self.convList[0](xi)))
-        x = F.relu(self.bnList[1](self.convList[1](x)))
+        x = self.relu(self.bnList[0](self.convList[0](xi)))
+        x = self.relu(self.bnList[1](self.convList[1](x)))
         xo = xi + x
-        xo = F.relu(xo)
+        xo = self.relu(xo)
         return xo
 
 
@@ -35,13 +36,14 @@ class DimUnit_BN(nn.Module):
     dimension change
     """
 
-    def __init__(self, in_channels, out_channels, stride=2, diff=8, option="B"):
+    def __init__(self, in_channels, out_channels, stride=2, option="B"):
         super(DimUnit_BN, self).__init__()
         self.option = option
+        self.relu = nn.ReLU(inplace=True)
         self.convList = nn.ModuleList()
         self.bnList = nn.ModuleList()
         self.conv1 = nn.Conv2d(in_channels, out_channels, 3, stride, 1)
-        self.conv1_2 = nn.Conv2d(in_channels, out_channels, 3, stride, 1)
+        self.conv1_2 = nn.Conv2d(in_channels, out_channels, 1, stride, 1)
         self.conv2 = nn.Conv2d(out_channels, out_channels, 3, 1, 1)
         self.bn1 = nn.BatchNorm2d(out_channels)
         self.bn1_2 = nn.BatchNorm2d(out_channels)
@@ -50,8 +52,8 @@ class DimUnit_BN(nn.Module):
 
     def forward(self, xi):
 
-        x = F.relu(self.bn1(self.conv1(xi)))
-        x = F.relu(self.bn2(self.conv2(x)))
+        x = self.relu(self.bn1(self.conv1(xi)))
+        x = self.relu(self.bn2(self.conv2(x)))
         if self.option == "A":
             xo = self.pad(xi[:, :, ::2, ::2]) + x
         elif self.option == "B":
@@ -59,7 +61,7 @@ class DimUnit_BN(nn.Module):
             xo = x1_2 + x
         else:
             xo = x
-        xo = F.relu(xo)
+        xo = self.relu(xo)
         return xo
 
 
@@ -67,6 +69,7 @@ class ResNet_BN(nn.Module):
     def __init__(self, total_layer=18):
         super(ResNet_BN, self).__init__()
         self.total_layer = total_layer
+        self.relu = nn.ReLU(inplace=True)
         # 1 input image channel, 6 output channels, 7x7 square convolution
         # kernel
         self.conv1_0 = nn.Conv2d(3, 64, 7, 2, 3)
@@ -88,11 +91,11 @@ class ResNet_BN(nn.Module):
 
         self.pool = nn.AdaptiveAvgPool2d((1, 1))
         self.bn1 = nn.BatchNorm2d(64)
-        self.fc = nn.Linear(512, 10)
+        self.fc = nn.Linear(512, 1000)
 
     def forward(self, x):
         # dimension 64
-        x = F.relu(self.bn1(self.pool1(self.conv1_0(x))))
+        x = self.relu(self.bn1(self.pool1(self.conv1_0(x))))
         x = self.DimUnit_BN1(x)
         layer = 0
         for i in range(self.config_layer[0] - 1):
