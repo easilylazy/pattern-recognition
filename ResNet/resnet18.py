@@ -93,6 +93,12 @@ class ResNet_BN(nn.Module):
         self.bn1 = nn.BatchNorm2d(64)
         self.fc = nn.Linear(512, 1000)
 
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
     def forward(self, x):
         # dimension 64
         x = self.relu(self.bn1(self.pool1(self.conv1_0(x))))
